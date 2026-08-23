@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, AlertCircle, Clock, Navigation } from 'lucide-react';
 
-// Fix for default Leaflet icon paths in React Vite
+// Fix default Leaflet asset path resolution for Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Helper component to center map on selected report
+// Helper component to center and zoom map when a report is selected
 const MapRecenter = ({ center, zoom }) => {
   const map = useMap();
   useEffect(() => {
@@ -23,51 +23,67 @@ const MapRecenter = ({ center, zoom }) => {
   return null;
 };
 
-// Create custom colored div markers based on severity
+// Create custom vector SVG map pin markers based on severity
 const createSeverityIcon = (severity) => {
-  let colorClass = 'marker-low';
-  let pulseClass = '';
+  let color = '#06b6d4'; // LOW (Cyan)
+  let badgeClass = 'marker-low';
 
   switch (severity) {
     case 'CRITICAL':
-      colorClass = 'marker-critical';
-      pulseClass = 'pulse-ring-critical';
+      color = '#ef4444'; // Red
+      badgeClass = 'marker-critical';
       break;
     case 'HIGH':
-      colorClass = 'marker-high';
-      pulseClass = 'pulse-ring-high';
+      color = '#f97316'; // Orange
+      badgeClass = 'marker-high';
       break;
     case 'MODERATE':
-      colorClass = 'marker-moderate';
+      color = '#eab308'; // Yellow
+      badgeClass = 'marker-moderate';
       break;
     case 'LOW':
     default:
-      colorClass = 'marker-low';
+      color = '#06b6d4'; // Cyan
+      badgeClass = 'marker-low';
       break;
   }
 
-  const html = `
-    <div className="custom-leaflet-marker ${colorClass}">
-      <div className="marker-pin"></div>
-      ${pulseClass ? `<div className="${pulseClass}"></div>` : ''}
+  const svgHtml = `
+    <div class="custom-marker-container ${badgeClass}" style="position: relative; width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.6)); pointer-events: auto;">
+      <svg width="32" height="42" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 34 12 34C12 34 24 21 24 12C24 5.37 18.63 0 12 0Z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+      </svg>
+      ${severity === 'CRITICAL' ? '<div class="critical-pulse-ring"></div>' : ''}
     </div>
   `;
 
   return L.divIcon({
-    className: 'custom-marker-wrapper',
-    html: html,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -28],
+    className: 'custom-leaflet-div-icon',
+    html: svgHtml,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -42],
   });
 };
 
 export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport }) => {
   const indiaCenter = [22.5937, 78.9629];
+  const markerRefs = useRef({});
 
   const activeCenter = selectedReport
     ? [selectedReport.latitude, selectedReport.longitude]
     : null;
+
+  // Open marker popup automatically when selected from incident list
+  useEffect(() => {
+    if (selectedReport && selectedReport.id && markerRefs.current[selectedReport.id]) {
+      const markerInstance = markerRefs.current[selectedReport.id];
+      if (markerInstance && markerInstance.openPopup) {
+        markerInstance.openPopup();
+      }
+    }
+  }, [selectedReport]);
 
   return (
     <div className="map-container-wrapper">
@@ -99,11 +115,21 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
           {activeCenter && <MapRecenter center={activeCenter} zoom={9} />}
 
           {reports.map((report) => {
-            if (!report.latitude || !report.longitude) return null;
+            if (
+              typeof report.latitude !== 'number' ||
+              typeof report.longitude !== 'number' ||
+              isNaN(report.latitude) ||
+              isNaN(report.longitude)
+            ) {
+              return null;
+            }
 
             return (
               <Marker
                 key={report.id}
+                ref={(el) => {
+                  if (el) markerRefs.current[report.id] = el;
+                }}
                 position={[report.latitude, report.longitude]}
                 icon={createSeverityIcon(report.severity)}
                 eventHandlers={{

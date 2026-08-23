@@ -138,5 +138,19 @@ export const MOCK_REPORTS = [
     source: "CITIZEN",
     reportedAt: "2026-08-23T07:15:00",
     createdAt: "2026-08-23T07:20:00"
+  },
+  {
+    id: "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+    title: "Urban Thunderstorm & Lightning Surge",
+    description: "Sudden convective storm brings heavy downpour and lightning across HITEC city sector.",
+    eventType: "THUNDERSTORM",
+    severity: "HIGH",
+    city: "Hyderabad",
+    state: "Telangana",
+    latitude: 17.3850,
+    longitude: 78.4867,
+    source: "WEATHER_API",
+    reportedAt: "2026-08-23T08:45:00",
+    createdAt: "2026-08-23T08:50:00"
   }
 ];
