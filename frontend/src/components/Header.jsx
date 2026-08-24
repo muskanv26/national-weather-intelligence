@@ -1,6 +1,5 @@
 import React from 'react';
-import { RefreshCw, DownloadCloud } from 'lucide-react';
-import { ShieldAlert, Activity, RefreshCw, Database, PlusCircle } from 'lucide-react';
+import { ShieldAlert, Activity, RefreshCw, Database, PlusCircle, DownloadCloud } from 'lucide-react';
 
 export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive, onOpenReportModal }) => {
   return (
@@ -31,12 +30,6 @@ export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive, onOpenRepo
             <PlusCircle size={16} />
             <span>Report Incident</span>
           </button>
-
-        {/* Last Updated Timestamp */}
-        <div className="timestamp-badge">
-          <span className="text-muted text-xs">Updated:</span>
-          <span className="timestamp-text">{lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Just now'}</span>
-        </div>
 
           {/* Last Updated Timestamp */}
           <div className="timestamp-badge">

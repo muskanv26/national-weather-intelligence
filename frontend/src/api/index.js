@@ -48,4 +48,9 @@ export const triggerScrape = async () => {
   return { status: "Scrapes triggered" };
 };
 
+export const createCitizenReport = async (data) => {
+  const response = await apiClient.post('/api/v1/citizen-reports', data);
+  return response.data;
+};
+
 export default apiClient;
