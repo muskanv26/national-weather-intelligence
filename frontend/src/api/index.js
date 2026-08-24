@@ -10,7 +10,7 @@ const apiClient = axios.create({
   },
 });
 
-export const getReports = async (filters = {}) => {
+export const getWeatherReports = async (filters = {}) => {
   const params = {};
   if (filters.eventType) params.eventType = filters.eventType;
   if (filters.state) params.state = filters.state;

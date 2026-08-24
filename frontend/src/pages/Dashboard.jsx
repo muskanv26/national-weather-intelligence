@@ -6,7 +6,7 @@ import WeatherMap from '../components/WeatherMap';
 import IncidentList from '../components/IncidentList';
 import Analytics from '../components/Analytics';
 import DetailModal from '../components/DetailModal';
-import { getReports, getHealth } from '../api';
+import { getWeatherReports, getHealth } from '../api';
 import { MOCK_REPORTS } from '../data/mockReports';
 
 export const Dashboard = () => {
@@ -27,44 +27,8 @@ export const Dashboard = () => {
     city: '',
   });
 
-  // Fetch reports from backend API or fallback to mock dataset
-  const fetchReportData = useCallback(async (currentFilters = filters) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // First check health
-      const healthData = await getHealth().catch(() => null);
-      const serverLive = Boolean(healthData && healthData.status === 'UP');
-      setIsLive(serverLive);
-
-      const apiData = await getReports(currentFilters);
-
-      if (Array.isArray(apiData) && apiData.length > 0) {
-        setReports(apiData);
-        setIsUsingMock(false);
-        if (!currentFilters.eventType && !currentFilters.severity && !currentFilters.state && !currentFilters.city) {
-          setAllReportsForFilters(apiData);
-        }
-      } else if (serverLive) {
-        // Server live but returned empty data -> show empty or fallback
-        setReports([]);
-        setIsUsingMock(false);
-      } else {
-        // Fallback to mock data if API unavailable
-        useMockData(currentFilters);
-      }
-    } catch (err) {
-      console.warn('Backend API connection failed, using dev mock fallback:', err.message);
-      setIsLive(false);
-      useMockData(currentFilters);
-    } finally {
-      setIsLoading(false);
-      setLastUpdated(new Date().toISOString());
-    }
-  }, [filters]);
-
-  const useMockData = (currentFilters) => {
+  // Isolated Fallback Mechanism to local MOCK_REPORTS
+  const useMockData = useCallback((currentFilters) => {
     setIsUsingMock(true);
     let filtered = [...MOCK_REPORTS];
 
@@ -87,7 +51,50 @@ export const Dashboard = () => {
 
     setReports(filtered);
     setAllReportsForFilters(MOCK_REPORTS);
-  };
+  }, []);
+
+  // Primary Data Fetch Flow: Spring Boot API -> React State
+  const fetchReportData = useCallback(async (currentFilters = filters) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Check API health status
+      const healthData = await getHealth().catch(() => null);
+      const serverLive = Boolean(healthData && healthData.status === 'UP');
+      setIsLive(serverLive);
+
+      if (!serverLive) {
+        throw new Error('Spring Boot API is unreachable');
+      }
+
+      // Fetch weather reports from GET http://localhost:8080/api/v1/reports
+      const apiData = await getWeatherReports(currentFilters);
+
+      if (Array.isArray(apiData)) {
+        setReports(apiData);
+        setIsUsingMock(false);
+
+        // Store unfiltered dataset for autocompletion state dropdowns
+        const isFilterActive = Boolean(
+          currentFilters.eventType || currentFilters.severity || currentFilters.state || currentFilters.city
+        );
+        if (!isFilterActive) {
+          setAllReportsForFilters(apiData);
+        }
+      } else {
+        throw new Error('API returned non-array payload');
+      }
+    } catch (err) {
+      console.warn('Backend REST API unavailable, switching to local dev fallback dataset:', err.message);
+      setIsLive(false);
+      setError('Live API connection unavailable. Displaying local fallback dataset.');
+      useMockData(currentFilters);
+    } finally {
+      setIsLoading(false);
+      setLastUpdated(new Date().toISOString());
+    }
+  }, [filters, useMockData]);
 
   useEffect(() => {
     fetchReportData(filters);
