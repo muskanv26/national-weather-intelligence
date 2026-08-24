@@ -54,14 +54,10 @@ export const KpiCards = ({ reports = [] }) => {
   return (
     <div className="kpi-grid">
       {kpis.map((kpi) => {
-        const Icon = kpi.icon;
         return (
           <div key={kpi.id} className={`kpi-card kpi-card-${kpi.color}`}>
             <div className="kpi-header">
               <span className="kpi-label">{kpi.label}</span>
-              <div className={`kpi-icon-wrapper icon-${kpi.color}`}>
-                <Icon size={20} />
-              </div>
             </div>
             <div className="kpi-body">
               <span className="kpi-value">{kpi.value}</span>
