@@ -28,6 +28,11 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
         if (environment.getPropertySources().contains(PROPERTY_SOURCE_NAME)) {
             return;
         }
+        for (String profile : environment.getActiveProfiles()) {
+            if ("test".equals(profile)) {
+                return;
+            }
+        }
 
         Path envFile = findEnvFile();
         if (envFile == null) {
