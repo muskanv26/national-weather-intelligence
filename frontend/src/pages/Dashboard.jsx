@@ -7,8 +7,15 @@ import IncidentList from '../components/IncidentList';
 import Analytics from '../components/Analytics';
 import DetailModal from '../components/DetailModal';
 import CitizenReportModal from '../components/CitizenReportModal';
+import ErrorToast from '../components/ErrorToast';
 import { getWeatherReports, getHealth } from '../api';
 import { MOCK_REPORTS } from '../data/mockReports';
+
+const hasPlottableCoordinates = (report) => {
+  const lat = Number(report?.latitude);
+  const lng = Number(report?.longitude);
+  return Number.isFinite(lat) && Number.isFinite(lng);
+};
 
 export const Dashboard = () => {
   const [reports, setReports] = useState([]);
@@ -21,6 +28,7 @@ export const Dashboard = () => {
   const [isUsingMock, setIsUsingMock] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
 
   const [filters, setFilters] = useState({
     eventType: '',
@@ -61,23 +69,15 @@ export const Dashboard = () => {
     setError(null);
 
     try {
-      // Check API health status
-      const healthData = await getHealth().catch(() => null);
-      const serverLive = Boolean(healthData && healthData.status === 'UP');
-      setIsLive(serverLive);
-
-      if (!serverLive) {
-        throw new Error('Spring Boot API is unreachable');
-      }
-
-      // Fetch weather reports from GET http://localhost:8080/api/v1/reports
       const apiData = await getWeatherReports(currentFilters);
+
+      const healthData = await getHealth().catch(() => null);
+      setIsLive(Boolean(healthData && healthData.status === 'UP'));
 
       if (Array.isArray(apiData)) {
         setReports(apiData);
         setIsUsingMock(false);
 
-        // Store unfiltered dataset for autocompletion state dropdowns
         const isFilterActive = Boolean(
           currentFilters.eventType || currentFilters.severity || currentFilters.state || currentFilters.city
         );
@@ -116,6 +116,8 @@ export const Dashboard = () => {
     new Set(allReportsForFilters.map((r) => r.state).filter(Boolean))
   );
 
+  const plottableReports = reports.filter(hasPlottableCoordinates);
+
   return (
     <div className="dashboard-layout">
       {/* Header */}
@@ -150,7 +152,7 @@ export const Dashboard = () => {
         <div className="main-split-grid">
           <div className="grid-left">
             <WeatherMap
-              reports={reports}
+              reports={plottableReports}
               selectedReport={selectedReport}
               onSelectReport={(report) => setModalReport(report)}
             />
@@ -158,7 +160,7 @@ export const Dashboard = () => {
 
           <div className="grid-right">
             <IncidentList
-              reports={reports}
+              reports={plottableReports}
               selectedReport={selectedReport}
               onSelectReport={(report) => {
                 setSelectedReport(report);
@@ -184,7 +186,13 @@ export const Dashboard = () => {
       <CitizenReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+        onAccepted={() => {
+          fetchReportData(filters);
+        }}
+        onRejected={(reason) => setErrorToast(reason)}
       />
+
+      <ErrorToast message={errorToast} onDismiss={() => setErrorToast(null)} />
     </div>
   );
 };

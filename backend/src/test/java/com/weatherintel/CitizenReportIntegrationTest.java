@@ -64,19 +64,12 @@ class CitizenReportIntegrationTest {
         mockMvc.perform(post("/api/v1/citizen-reports")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.rawText", is("Waterlogging on Golf Course Road after heavy downpour")))
-                .andExpect(jsonPath("$.city", is("Gurugram")))
-                .andExpect(jsonPath("$.state", is("Haryana")))
-                .andExpect(jsonPath("$.sourceType", is("CITIZEN")))
-                .andExpect(jsonPath("$.verificationStatus", is("PENDING")))
-                .andExpect(jsonPath("$.hashtags", hasSize(2)))
-                .andExpect(jsonPath("$.createdAt").exists());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.reason", not(isEmptyOrNullString())));
     }
 
     @Test
-    void test2_NewReportDefaultsToPending() throws Exception {
+    void test2_InvalidReportIsRejectedWithReason() throws Exception {
         CitizenReportCreateRequest request = CitizenReportCreateRequest.builder()
                 .rawText("Severe wind blowing near coastal belt")
                 .city("Kochi")
@@ -87,8 +80,8 @@ class CitizenReportIntegrationTest {
         mockMvc.perform(post("/api/v1/citizen-reports")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.verificationStatus", is("PENDING")));
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.reason", not(isEmptyOrNullString())));
     }
 
     @Test
@@ -271,19 +264,16 @@ class CitizenReportIntegrationTest {
     }
 
     private String createSampleReport(String rawText, String city, String state, SourceType sourceType) throws Exception {
-        CitizenReportCreateRequest request = CitizenReportCreateRequest.builder()
-                .rawText(rawText)
-                .city(city)
-                .state(state)
-                .sourceType(sourceType)
-                .build();
-
-        return mockMvc.perform(post("/api/v1/citizen-reports")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        com.weatherintel.entity.CitizenReport saved = repository.save(
+                com.weatherintel.entity.CitizenReport.builder()
+                        .rawText(rawText)
+                        .city(city)
+                        .state(state)
+                        .sourceType(sourceType)
+                        .verificationStatus(VerificationStatus.PENDING)
+                        .createdAt(java.time.LocalDateTime.now())
+                        .build()
+        );
+        return objectMapper.writeValueAsString(com.weatherintel.dto.CitizenReportResponse.fromEntity(saved));
     }
 }

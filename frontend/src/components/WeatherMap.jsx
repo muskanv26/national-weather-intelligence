@@ -23,39 +23,60 @@ const MapRecenter = ({ center, zoom }) => {
   return null;
 };
 
-// Create custom vector SVG map pin markers based on severity
-const createSeverityIcon = (severity) => {
-  let color = '#0B5FA5'; // LOW (Official Blue)
+// Create custom vector SVG map pin markers based on severity / verification
+const isUnverified = (report) => {
+  const status = report?.verificationStatus;
+  return Boolean(status) && status !== 'VERIFIED';
+};
+
+const createMarkerIcon = (report) => {
+  const unverified = isUnverified(report);
+  const eventType = report?.eventType || 'OTHER';
+  const severity = report?.severity || 'LOW';
+
+  let color = '#0B5FA5';
   let badgeClass = 'marker-low';
 
-  switch (severity) {
-    case 'CRITICAL':
-      color = '#D62839'; // Red
-      badgeClass = 'marker-critical';
-      break;
-    case 'HIGH':
-      color = '#E8720C'; // Saffron/Orange
-      badgeClass = 'marker-high';
-      break;
-    case 'MODERATE':
-      color = '#C79000'; // Amber/Yellow
-      badgeClass = 'marker-moderate';
-      break;
-    case 'LOW':
-    default:
-      color = '#0B5FA5'; // Official Blue
-      badgeClass = 'marker-low';
-      break;
+  if (unverified) {
+    color = '#94A3B8';
+    badgeClass = 'marker-unverified';
+  } else if (eventType === 'OTHER') {
+    color = '#7C3AED';
+    badgeClass = 'marker-other';
+  } else {
+    switch (severity) {
+      case 'CRITICAL':
+        color = '#D62839';
+        badgeClass = 'marker-critical';
+        break;
+      case 'HIGH':
+        color = '#E8720C';
+        badgeClass = 'marker-high';
+        break;
+      case 'MODERATE':
+        color = '#C79000';
+        badgeClass = 'marker-moderate';
+        break;
+      case 'LOW':
+      default:
+        color = '#0B5FA5';
+        badgeClass = 'marker-low';
+        break;
+    }
   }
 
+  const pinFill = unverified ? 'none' : color;
+  const pinStroke = unverified ? '#64748B' : '#ffffff';
+  const innerFill = unverified ? 'none' : '#ffffff';
+  const innerStroke = unverified ? '#64748B' : 'none';
 
   const svgHtml = `
     <div class="custom-marker-container ${badgeClass}" style="position: relative; width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.6)); pointer-events: auto;">
       <svg width="32" height="42" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 34 12 34C12 34 24 21 24 12C24 5.37 18.63 0 12 0Z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
-        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+        <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 34 12 34C12 34 24 21 24 12C24 5.37 18.63 0 12 0Z" fill="${pinFill}" stroke="${pinStroke}" stroke-width="2"/>
+        <circle cx="12" cy="12" r="5" fill="${innerFill}" stroke="${innerStroke}" stroke-width="2"/>
       </svg>
-      ${severity === 'CRITICAL' ? '<div class="critical-pulse-ring"></div>' : ''}
+      ${!unverified && severity === 'CRITICAL' ? '<div class="critical-pulse-ring"></div>' : ''}
     </div>
   `;
 
@@ -72,8 +93,8 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
   const indiaCenter = [22.5937, 78.9629];
   const markerRefs = useRef({});
 
-  const activeCenter = selectedReport
-    ? [selectedReport.latitude, selectedReport.longitude]
+    const activeCenter = selectedReport && Number.isFinite(Number(selectedReport.latitude)) && Number.isFinite(Number(selectedReport.longitude))
+    ? [Number(selectedReport.latitude), Number(selectedReport.longitude)]
     : null;
 
   // Open marker popup automatically when selected from incident list
@@ -98,6 +119,8 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
           <span className="legend-item"><span className="legend-dot high"></span> High</span>
           <span className="legend-item"><span className="legend-dot moderate"></span> Moderate</span>
           <span className="legend-item"><span className="legend-dot low"></span> Low</span>
+          <span className="legend-item"><span className="legend-dot other"></span> Other</span>
+          <span className="legend-item"><span className="legend-dot unverified"></span> Unverified</span>
         </div>
       </div>
 
@@ -116,12 +139,9 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
           {activeCenter && <MapRecenter center={activeCenter} zoom={9} />}
 
           {reports.map((report) => {
-            if (
-              typeof report.latitude !== 'number' ||
-              typeof report.longitude !== 'number' ||
-              isNaN(report.latitude) ||
-              isNaN(report.longitude)
-            ) {
+            const latitude = Number(report.latitude);
+            const longitude = Number(report.longitude);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
               return null;
             }
 
@@ -131,8 +151,8 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
                 ref={(el) => {
                   if (el) markerRefs.current[report.id] = el;
                 }}
-                position={[report.latitude, report.longitude]}
-                icon={createSeverityIcon(report.severity)}
+                position={[latitude, longitude]}
+                icon={createMarkerIcon(report)}
                 eventHandlers={{
                   click: () => onSelectReport && onSelectReport(report),
                 }}
@@ -143,7 +163,10 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
                       <span className={`severity-badge badge-${report.severity?.toLowerCase()}`}>
                         {report.severity}
                       </span>
-                      <span className="event-type-tag">{report.eventType?.replace('_', ' ')}</span>
+                      <span className="event-type-tag">{(report.eventType || 'OTHER').replace('_', ' ')}</span>
+                      {isUnverified(report) && (
+                        <span className="event-type-tag unverified-tag">UNVERIFIED</span>
+                      )}
                     </div>
 
                     <h3 className="popup-title">{report.title}</h3>

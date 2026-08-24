@@ -7,9 +7,10 @@ import {
   CloudFog,
   Wind,
   Tornado,
-  AlertTriangle,
+  HelpCircle,
   MapPin,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 
 const getEventIcon = (eventType) => {
@@ -29,32 +30,48 @@ const getEventIcon = (eventType) => {
       return Wind;
     case 'CYCLONE':
       return Tornado;
+    case 'OTHER':
     default:
-      return AlertTriangle;
+      return HelpCircle;
   }
 };
 
+const isUnverified = (report) => {
+  const status = report?.verificationStatus;
+  return Boolean(status) && status !== 'VERIFIED';
+};
+
 export const IncidentCard = ({ report, isSelected, onClick }) => {
-  const IconComponent = getEventIcon(report.eventType);
+  const eventType = report.eventType || 'OTHER';
+  const IconComponent = getEventIcon(eventType);
+  const unverified = isUnverified(report);
 
   return (
     <div
       onClick={onClick}
-      className={`incident-card ${isSelected ? 'incident-card-selected' : ''}`}
+      className={`incident-card ${isSelected ? 'incident-card-selected' : ''} ${unverified ? 'incident-card-unverified' : ''}`}
     >
       <div className="incident-card-header">
-        <div className="event-icon-badge">
+        <div className={`event-icon-badge ${eventType === 'OTHER' ? 'event-icon-badge-other' : ''}`}>
           <IconComponent size={18} />
         </div>
         <div className="incident-meta-top">
-          <span className="event-name">{report.eventType?.replace('_', ' ')}</span>
-          <span className={`severity-badge badge-${report.severity?.toLowerCase()}`}>
-            {report.severity}
+          <span className="event-name">{eventType.replace('_', ' ')}</span>
+          <span className={`severity-badge badge-${(report.severity || 'low').toLowerCase()}`}>
+            {report.severity || 'LOW'}
           </span>
+          {unverified && <span className="severity-badge badge-unverified">UNVERIFIED</span>}
         </div>
       </div>
 
       <h4 className="incident-title">{report.title}</h4>
+
+      {typeof report.aiConfidenceScore === 'number' && (
+        <span className="ai-verified-badge" title="Validated by Gemini">
+          <Sparkles size={11} />
+          AI Verified {Math.round(report.aiConfidenceScore <= 1 ? report.aiConfidenceScore * 100 : report.aiConfidenceScore)}%
+        </span>
+      )}
 
       <p className="incident-snippet">{report.description}</p>
 

@@ -9,11 +9,10 @@ import com.weatherintel.exception.ResourceNotFoundException;
 import com.weatherintel.repository.CitizenReportRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,38 +23,33 @@ public class CitizenReportService {
 
     private final CitizenReportRepository repository;
     private final CitizenReportEventProducer eventProducer;
+    private final WeatherReportService weatherReportService;
 
-    public CitizenReportService(CitizenReportRepository repository, CitizenReportEventProducer eventProducer) {
+    public CitizenReportService(
+            CitizenReportRepository repository,
+            @Nullable CitizenReportEventProducer eventProducer,
+            WeatherReportService weatherReportService) {
         this.repository = repository;
         this.eventProducer = eventProducer;
+        this.weatherReportService = weatherReportService;
     }
 
     @Transactional
     public CitizenReportResponse createReport(CitizenReportCreateRequest request) {
-        CitizenReport entity = CitizenReport.builder()
-                .rawText(request.getRawText())
-                .imageUrl(request.getImageUrl())
-                .city(request.getCity())
-                .state(request.getState())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
-                .hashtags(request.getHashtags() != null ? new ArrayList<>(request.getHashtags()) : new ArrayList<>())
-                .sourceHandle(request.getSourceHandle())
-                .sourceType(request.getSourceType())
-                .verificationStatus(VerificationStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
+        CitizenReportResponse response = weatherReportService.processCitizenReport(request);
 
-        CitizenReport saved = repository.save(entity);
-
-        try {
-            CitizenReportEventDto eventDto = CitizenReportEventDto.fromEntity(saved);
-            eventProducer.sendCitizenReportEvent(eventDto);
-        } catch (Exception ex) {
-            log.warn("Failed to publish Kafka citizen report event for id={}: {}", saved.getId(), ex.getMessage());
+        if (eventProducer != null && response.getId() != null) {
+            try {
+                CitizenReport saved = repository.findById(response.getId()).orElse(null);
+                if (saved != null) {
+                    eventProducer.sendCitizenReportEvent(CitizenReportEventDto.fromEntity(saved));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to publish Kafka citizen report event for id={}: {}", response.getId(), ex.getMessage());
+            }
         }
 
-        return CitizenReportResponse.fromEntity(saved);
+        return response;
     }
 
     @Transactional(readOnly = true)

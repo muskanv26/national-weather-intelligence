@@ -10,7 +10,8 @@ import {
   User,
   ShieldAlert,
   Send,
-  Navigation
+  Navigation,
+  XCircle
 } from 'lucide-react';
 import { createCitizenReport } from '../api';
 
@@ -25,7 +26,24 @@ const INITIAL_FORM_STATE = {
   sourceHandle: 'citizen_web'
 };
 
-export const CitizenReportModal = ({ isOpen, onClose }) => {
+const formatPercent = (value) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return null;
+  const pct = value <= 1 ? Math.round(value * 100) : Math.round(value);
+  return `${pct}%`;
+};
+
+const extractGeminiReason = (err) => {
+  const data = err?.response?.data;
+  if (data?.reason && String(data.reason).trim()) {
+    return String(data.reason).trim();
+  }
+  if (data?.message && String(data.message).trim()) {
+    return String(data.message).trim();
+  }
+  return 'This report was rejected as not a genuine weather incident.';
+};
+
+export const CitizenReportModal = ({ isOpen, onClose, onAccepted, onRejected }) => {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
   const [isLocating, setIsLocating] = useState(false);
@@ -34,6 +52,7 @@ export const CitizenReportModal = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submittedReport, setSubmittedReport] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState(null);
 
   // Close on Escape key press
   useEffect(() => {
@@ -181,9 +200,23 @@ export const CitizenReportModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await createCitizenReport(payload);
+      if (response?.isValid === false || response?.verificationStatus === 'REJECTED') {
+        const reason = response?.reason || 'This report was rejected as not a genuine weather incident.';
+        setRejectionReason(reason);
+        onRejected?.(reason);
+        return;
+      }
       setSubmittedReport(response || payload);
+      onAccepted?.(response);
     } catch (err) {
       console.error('Failed to submit citizen report:', err);
+      const status = err.response && err.response.status;
+      if (status === 422) {
+        const reason = extractGeminiReason(err);
+        setRejectionReason(reason);
+        onRejected?.(reason);
+        return;
+      }
       const serverMsg =
         err.response && err.response.data && err.response.data.message
           ? err.response.data.message
@@ -199,6 +232,7 @@ export const CitizenReportModal = ({ isOpen, onClose }) => {
     setErrors({});
     setSubmitError(null);
     setSubmittedReport(null);
+    setRejectionReason(null);
     setLocationError(null);
     setLocationSuccess(false);
   };
@@ -219,21 +253,36 @@ export const CitizenReportModal = ({ isOpen, onClose }) => {
 
         {/* Modal Body */}
         <div className="modal-body">
-          {submittedReport ? (
+          {rejectionReason ? (
+            <div className="report-success-panel">
+              <div className="success-icon-wrapper">
+                <XCircle size={48} className="text-amber" />
+              </div>
+              <h3 className="success-title">Report rejected</h3>
+              <p className="success-description">{rejectionReason}</p>
+              <div className="success-actions">
+                <button type="button" onClick={handleReset} className="btn-secondary">
+                  Try Again
+                </button>
+                <button type="button" onClick={onClose} className="btn-primary">
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : submittedReport ? (
             /* SUCCESS CONFIRMATION STATE */
             <div className="report-success-panel">
               <div className="success-icon-wrapper">
                 <CheckCircle2 size={48} className="text-emerald" />
               </div>
-              <h3 className="success-title">Report Submitted Successfully</h3>
-
-              <div className="verification-status-pill">
-                <span className="status-indicator-dot pending-dot"></span>
-                <span>Status: <strong>PENDING</strong> (Awaiting Verification)</span>
-              </div>
+              <h3 className="success-title">
+                Verified ✓{formatPercent(submittedReport.aiConfidenceScore)
+                  ? ` (${formatPercent(submittedReport.aiConfidenceScore)})`
+                  : ''}
+              </h3>
 
               <p className="success-description">
-                Thank you for contributing to public safety. Your incident report has been registered into the National Weather Intelligence pipeline and is pending validation.
+                This report was accepted as a genuine weather incident for {submittedReport.city}, {submittedReport.state}.
               </p>
 
               <div className="submitted-summary-box">
@@ -245,12 +294,6 @@ export const CitizenReportModal = ({ isOpen, onClose }) => {
                   <span className="summary-label">Description:</span>
                   <span className="summary-value">{submittedReport.rawText}</span>
                 </div>
-                {submittedReport.sourceType && (
-                  <div className="summary-row">
-                    <span className="summary-label">Source Type:</span>
-                    <span className="summary-value badge-source">{submittedReport.sourceType}</span>
-                  </div>
-                )}
               </div>
 
               <div className="success-actions">

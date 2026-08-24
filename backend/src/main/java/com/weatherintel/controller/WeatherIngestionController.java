@@ -5,6 +5,7 @@ import com.weatherintel.service.WeatherEventProducer;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +21,18 @@ public class WeatherIngestionController {
 
     private final WeatherEventProducer eventProducer;
 
-    public WeatherIngestionController(WeatherEventProducer eventProducer) {
+    public WeatherIngestionController(@Nullable WeatherEventProducer eventProducer) {
         this.eventProducer = eventProducer;
     }
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> ingestWeatherEvent(@Valid @RequestBody WeatherEventDto request) {
+        if (eventProducer == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "status", "UNAVAILABLE",
+                    "message", "Kafka ingestion is disabled in this environment"
+            ));
+        }
         if (request.getId() == null) {
             request.setId(UUID.randomUUID());
         }

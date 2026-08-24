@@ -3,6 +3,7 @@ package com.weatherintel.dto;
 import com.weatherintel.entity.EventType;
 import com.weatherintel.entity.Severity;
 import com.weatherintel.entity.SourceType;
+import com.weatherintel.entity.VerificationStatus;
 import com.weatherintel.entity.WeatherReport;
 import lombok.*;
 
@@ -26,6 +27,8 @@ public class WeatherReportResponse {
     private Double latitude;
     private Double longitude;
     private SourceType source;
+    private VerificationStatus verificationStatus;
+    private Double aiConfidenceScore;
     private LocalDateTime reportedAt;
     private LocalDateTime createdAt;
 
@@ -34,13 +37,17 @@ public class WeatherReportResponse {
                 .id(entity.getId())
                 .title(entity.getTitle())
                 .description(entity.getDescription())
-                .eventType(entity.getEventType())
+                .eventType(entity.getEventType() != null ? entity.getEventType() : EventType.OTHER)
                 .severity(entity.getSeverity())
                 .city(entity.getCity())
                 .state(entity.getState())
                 .latitude(entity.getLatitude())
                 .longitude(entity.getLongitude())
                 .source(entity.getSource())
+                .verificationStatus(entity.getVerificationStatus() != null
+                        ? entity.getVerificationStatus()
+                        : VerificationStatus.VERIFIED)
+                .aiConfidenceScore(entity.getAiConfidenceScore())
                 .reportedAt(entity.getReportedAt())
                 .createdAt(entity.getCreatedAt())
                 .build();

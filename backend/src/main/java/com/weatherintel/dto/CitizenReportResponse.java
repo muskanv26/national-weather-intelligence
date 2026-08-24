@@ -28,11 +28,17 @@ public class CitizenReportResponse {
     private SourceType sourceType;
     private VerificationStatus verificationStatus;
     private Double aiConfidenceScore;
-    private String aiCategory;
+    private Boolean isValid;
+    private String reason;
     private UUID duplicateOfId;
     private LocalDateTime createdAt;
 
     public static CitizenReportResponse fromEntity(CitizenReport entity) {
+        boolean verified = entity != null && entity.getVerificationStatus() == VerificationStatus.VERIFIED;
+        return fromEntity(entity, verified, null);
+    }
+
+    public static CitizenReportResponse fromEntity(CitizenReport entity, boolean isValid, String reason) {
         if (entity == null) {
             return null;
         }
@@ -49,7 +55,8 @@ public class CitizenReportResponse {
                 .sourceType(entity.getSourceType())
                 .verificationStatus(entity.getVerificationStatus())
                 .aiConfidenceScore(entity.getAiConfidenceScore())
-                .aiCategory(entity.getAiCategory())
+                .isValid(isValid)
+                .reason(reason)
                 .duplicateOfId(entity.getDuplicateOfId())
                 .createdAt(entity.getCreatedAt())
                 .build();

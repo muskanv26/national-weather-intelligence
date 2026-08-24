@@ -23,6 +23,7 @@ import java.util.Map;
 
 @Configuration
 @EnableKafka
+@ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
