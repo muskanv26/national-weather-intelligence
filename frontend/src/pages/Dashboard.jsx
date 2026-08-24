@@ -6,6 +6,7 @@ import WeatherMap from '../components/WeatherMap';
 import IncidentList from '../components/IncidentList';
 import Analytics from '../components/Analytics';
 import DetailModal from '../components/DetailModal';
+import CitizenReportModal from '../components/CitizenReportModal';
 import { getWeatherReports, getHealth } from '../api';
 import { MOCK_REPORTS } from '../data/mockReports';
 
@@ -14,6 +15,7 @@ export const Dashboard = () => {
   const [allReportsForFilters, setAllReportsForFilters] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [modalReport, setModalReport] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUsingMock, setIsUsingMock] = useState(false);
@@ -122,6 +124,7 @@ export const Dashboard = () => {
         onRefresh={() => fetchReportData(filters)}
         isUsingMock={isUsingMock}
         isLive={isLive}
+        onOpenReportModal={() => setIsReportModalOpen(true)}
       />
 
       <main className="dashboard-main-content">
@@ -176,6 +179,12 @@ export const Dashboard = () => {
           onClose={() => setModalReport(null)}
         />
       )}
+
+      {/* Citizen Report Form Modal */}
+      <CitizenReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
-import { ShieldAlert, Activity, RefreshCw, Database } from 'lucide-react';
+import { ShieldAlert, Activity, RefreshCw, Database, PlusCircle } from 'lucide-react';
 
-export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive }) => {
+export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive, onOpenReportModal }) => {
   return (
     <>
       <header className="header-container">
@@ -21,6 +21,16 @@ export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive }) => {
         </div>
 
         <div className="header-controls">
+          {/* Report Incident CTA */}
+          <button
+            onClick={onOpenReportModal}
+            className="btn-report-incident"
+            title="Report a weather incident or disaster in your area"
+          >
+            <PlusCircle size={16} />
+            <span>Report Incident</span>
+          </button>
+
           {/* Connection Status Badge */}
           <div className={`status-pill ${isLive ? 'status-live' : 'status-offline'}`}>
             <span className="pulse-dot"></span>
