@@ -31,6 +31,23 @@ export const getHealth = async () => {
   return response.data;
 };
 
+export const triggerScrape = async () => {
+  try {
+    // Trigger twscrape (port 8000)
+    await axios.post('http://localhost:8000/scrape');
+  } catch (e) {
+    console.error("Twscrape trigger failed", e);
+  }
+
+  try {
+    // Trigger apify-scraper (port 8001)
+    await axios.post('http://localhost:8001/scrape');
+  } catch (e) {
+    console.error("Apify trigger failed", e);
+  }
+  return { status: "Scrapes triggered" };
+};
+
 export const createCitizenReport = async (reportData) => {
   const response = await apiClient.post('/api/v1/citizen-reports', reportData, { timeout: 25000 });
   return response.data;

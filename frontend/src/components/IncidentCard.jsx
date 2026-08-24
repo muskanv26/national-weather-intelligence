@@ -73,6 +73,12 @@ export const IncidentCard = ({ report, isSelected, onClick }) => {
         </span>
       )}
 
+      {report.imageUrl && (
+        <div className="incident-image-container" style={{marginTop: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', overflow: 'hidden'}}>
+          <img src={report.imageUrl} alt="Incident media" style={{width: '100%', height: 'auto', display: 'block'}} />
+        </div>
+      )}
+
       <p className="incident-snippet">{report.description}</p>
 
       <div className="incident-footer">
@@ -82,7 +88,7 @@ export const IncidentCard = ({ report, isSelected, onClick }) => {
         </div>
         <div className="footer-item">
           <Clock size={12} className="text-muted" />
-          <span>{report.reportedAt ? new Date(report.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+          <span>{report.reportedAt ? new Date(report.reportedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
         </div>
       </div>
     </div>

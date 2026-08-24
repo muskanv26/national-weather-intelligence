@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, Activity, RefreshCw, Database, PlusCircle } from 'lucide-react';
+import { ShieldAlert, Activity, RefreshCw, Database, PlusCircle, DownloadCloud } from 'lucide-react';
 
 export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive, onOpenReportModal }) => {
   return (
@@ -30,19 +30,6 @@ export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive, onOpenRepo
             <PlusCircle size={16} />
             <span>Report Incident</span>
           </button>
-
-          {/* Connection Status Badge */}
-          <div className={`status-pill ${isLive ? 'status-live' : 'status-offline'}`}>
-            <span className="pulse-dot"></span>
-            <Activity size={14} className="mr-1" />
-            <span>{isLive ? 'SYSTEM LIVE' : 'OFFLINE MODE'}</span>
-          </div>
-
-          {/* Data Source Indicator */}
-          <div className="datasource-badge" title={isUsingMock ? "Using Local Fallback Data" : "Connected to Live PostgreSQL Database"}>
-            <Database size={14} className={isUsingMock ? 'text-amber' : 'text-emerald'} />
-            <span>{isUsingMock ? 'Demo Data' : 'Live DB'}</span>
-          </div>
 
           {/* Last Updated Timestamp */}
           <div className="timestamp-badge">

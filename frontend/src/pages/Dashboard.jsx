@@ -6,9 +6,9 @@ import WeatherMap from '../components/WeatherMap';
 import IncidentList from '../components/IncidentList';
 import Analytics from '../components/Analytics';
 import DetailModal from '../components/DetailModal';
+import { getWeatherReports, getHealth, triggerScrape } from '../api';
 import CitizenReportModal from '../components/CitizenReportModal';
 import ErrorToast from '../components/ErrorToast';
-import { getWeatherReports, getHealth } from '../api';
 import { MOCK_REPORTS } from '../data/mockReports';
 
 const hasPlottableCoordinates = (report) => {
@@ -75,14 +75,16 @@ export const Dashboard = () => {
       setIsLive(Boolean(healthData && healthData.status === 'UP'));
 
       if (Array.isArray(apiData)) {
-        setReports(apiData);
+        // Sort by reportedAt descending (newest first)
+        const sortedData = apiData.sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
+        setReports(sortedData);
         setIsUsingMock(false);
 
         const isFilterActive = Boolean(
           currentFilters.eventType || currentFilters.severity || currentFilters.state || currentFilters.city
         );
         if (!isFilterActive) {
-          setAllReportsForFilters(apiData);
+          setAllReportsForFilters(sortedData);
         }
       } else {
         throw new Error('API returned non-array payload');
@@ -111,6 +113,19 @@ export const Dashboard = () => {
     setFilters(resetState);
   };
 
+  const handleRefresh = async () => {
+    try {
+      // 1. Force the scraper to run
+      await triggerScrape();
+      // 2. Wait for Kafka -> Backend -> DB pipeline
+      setTimeout(() => fetchReportData(filters), 3000);
+    } catch (err) {
+      console.error("Failed to trigger scrape:", err);
+      // Fallback: still fetch data even if scrape trigger fails
+      fetchReportData(filters);
+    }
+  };
+
   // Derive unique states for autocompletion
   const availableStates = Array.from(
     new Set(allReportsForFilters.map((r) => r.state).filter(Boolean))
@@ -123,7 +138,7 @@ export const Dashboard = () => {
       {/* Header */}
       <Header
         lastUpdated={lastUpdated}
-        onRefresh={() => fetchReportData(filters)}
+        onRefresh={handleRefresh}
         isUsingMock={isUsingMock}
         isLive={isLive}
         onOpenReportModal={() => setIsReportModalOpen(true)}

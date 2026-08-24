@@ -57,6 +57,12 @@ public class WeatherReport {
     @Column
     private Double aiConfidenceScore;
 
+    @Column(length = 1000)
+    private String imageUrl;
+
+    @Column(unique = true)
+    private String externalId;
+
     @Column(nullable = false)
     private LocalDateTime reportedAt;
 
