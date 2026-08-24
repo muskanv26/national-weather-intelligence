@@ -55,10 +55,86 @@ GIS Visualization
 - **Extreme Weather Risk Scoring:** Evaluate real-time meteorological indicators to score danger levels for severe weather events.
 - **Automated Weather Summaries:** Generate natural-language weather condition reports for regions and disaster management operators.
 
-## 7. Planned Big Data / Real-Time Architecture
-- **Stream Ingestion & Processing:** High-throughput backend data pipeline handling high-frequency telemetry from meteorological sensors.
-- **Real-Time Delivery:** WebSocket push mechanisms for instant dashboard updates without page reloads.
-- **Storage Strategy:** Optimized time-series indexing and relational database schemas to efficiently query historical and spatial datasets.
+## 7. Real-Time Kafka Ingestion Architecture
+To handle high-frequency stream ingestion from automated weather stations, satellite observations, and IoT sensors across India, the platform incorporates an event-driven Apache Kafka messaging pipeline:
+
+```text
+┌─────────────────────┐
+│ Weather Sensor Feed │
+└──────────┬──────────┘
+           │ (HTTP POST)
+           ▼
+┌───────────────────────────┐
+│ Spring Boot Ingestion API │
+│ POST /api/v1/ingestion    │
+└──────────┬────────────────┘
+           │
+           ▼
+┌───────────────────────────┐
+│   Kafka Producer Service  │
+│   (State:City Keying)     │
+└──────────┬────────────────┘
+           │
+           ▼
+┌───────────────────────────┐
+│     weather-events        │
+│   (3 Partitions Topic)    │
+└──────────┬────────────────┘
+           │
+           ▼
+┌───────────────────────────┐
+│   Kafka Consumer Service  │
+│ (Deserialization & Log)   │
+└──────────┬────────────────┘
+           │
+           ▼
+ Future Phase: HBase Storage
+```
+
+### Why Apache Kafka?
+- **High Throughput & Decoupling:** Decouples sensor data producers from downstream storage and analytics engines, preventing database lock-ups during severe storm surges.
+- **Partitioning & Regional Stream Ordering:** The `weather-events` topic is configured with 3 partitions. Producer keying by `state:city` ensures all observations for a specific geographic region remain strictly ordered within the same partition.
+- **Scalability:** Enables horizontal scaling of consumer groups to process thousands of sensor reports per second.
+
+### Local Kafka Running Instructions
+Using Docker Compose:
+```bash
+docker run -d --name zookeeper -p 2181:2181 zookeeper:latest
+docker run -d --name kafka -p 9092:9092 --link zookeeper:zookeeper -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 confluentinc/cp-kafka:latest
+```
+
+### Ingestion Test Endpoint Example
+Send a sample weather telemetry event to Kafka:
+```bash
+curl -X POST http://localhost:8080/api/v1/ingestion/weather \
+  -H "Content-Type: application/json" \
+  -d '{
+    "latitude": 28.6139,
+    "longitude": 77.2090,
+    "temperature": 42.5,
+    "humidity": 68.0,
+    "precipitation": 12.4,
+    "windSpeed": 45.0,
+    "atmosphericPressure": 1008.2,
+    "eventType": "HEATWAVE",
+    "severity": "HIGH",
+    "sourceType": "WEATHER_API",
+    "state": "Delhi",
+    "city": "New Delhi"
+  }'
+```
+**Response (HTTP 202 ACCEPTED):**
+```json
+{
+  "status": "QUEUED",
+  "message": "Weather event accepted for real-time Kafka ingestion",
+  "eventId": "a1b2c3d4-...",
+  "topic": "weather-events",
+  "timestamp": "2026-08-24T12:00:00"
+}
+```
+
+---
 
 ## 8. Project Structure
 ```
@@ -66,15 +142,15 @@ national-weather-intelligence/
 ├── backend/            # Spring Boot backend application (Java 21 + Maven)
 │   ├── src/main/java/com/weatherintel/
 │   │   ├── WeatherIntelligenceApplication.java
-│   │   ├── config/             # CORS and Web MVC configuration
-│   │   ├── controller/         # WeatherReportController & HealthController REST endpoints
-│   │   ├── dto/                # Request & Response Data Transfer Objects
+│   │   ├── config/             # CORS, Web MVC, DatabaseSeeder, and KafkaConfig
+│   │   ├── controller/         # WeatherReportController, HealthController, WeatherIngestionController
+│   │   ├── dto/                # CreateWeatherReportRequest, WeatherReportResponse, WeatherEventDto
 │   │   ├── entity/             # WeatherReport JPA entity & Enums (EventType, Severity, SourceType)
 │   │   ├── exception/          # GlobalExceptionHandler & custom exceptions
 │   │   ├── repository/         # WeatherReportRepository (Spring Data JPA)
-│   │   └── service/            # WeatherReportService business logic
-│   └── src/test/java/          # Spring Boot MockMvc integration test suite
-├── frontend/           # React + Vite dashboard application (Planned)
+│   │   └── service/            # WeatherReportService, WeatherEventProducer, WeatherEventConsumer
+│   └── src/test/java/          # Spring Boot MockMvc & Kafka test suites
+├── frontend/           # React + Vite GIS dashboard application
 ├── data/               # Datasets, schemas, and mock telemetry feeds
 ├── docs/               # Documentation, architectural diagrams, and research notes
 ├── .env.example        # Environment variable template
@@ -87,7 +163,8 @@ national-weather-intelligence/
 ### Prerequisites
 - Java JDK 21+
 - Apache Maven 3.9+
-- PostgreSQL 17+ (or Docker PostgreSQL container)
+- PostgreSQL 17+
+- Apache Kafka 3.x / Docker
 
 ### Setup Instructions
 1. **Clone the repository:**
@@ -97,7 +174,7 @@ national-weather-intelligence/
    ```
 
 2. **Configure environment variables:**
-   Copy `.env.example` to `.env` and fill in your PostgreSQL credentials:
+   Copy `.env.example` to `.env` and fill in your PostgreSQL and Kafka configurations:
    ```bash
    cp .env.example .env
    ```
@@ -111,18 +188,19 @@ national-weather-intelligence/
 4. **Backend Setup & Run:**
    ```bash
    cd backend
-   mvn clean test     # Run integration tests
-   mvn spring-boot:run # Start the backend server on port 8080
+   .\mvnw.cmd test         # Run integration test suite
+   .\mvnw.cmd spring-boot:run # Start backend server on port 8080
    ```
 
-5. **Frontend Setup:** *(Planned for Next Phase)*
+5. **Frontend Setup & Run:**
    ```bash
    cd frontend
-   # Frontend instructions will be added in Phase 2
+   npm install
+   npm run dev            # Start Vite development server on port 5173
    ```
 
 ## 10. Development Status
-- **Current Phase:** Phase 1 — Core Backend Foundation Implemented.
+- **Current Branch:** `feature/kafka-hbase-pipeline`
 - **Completed:** 
   - Directory structure initialized (`backend/`, `frontend/`, `data/`, `docs/`)
   - Spring Boot 3.x backend application bootstrapped under `com.weatherintel` package
@@ -131,7 +209,7 @@ national-weather-intelligence/
   - `WeatherReportService` with modular business logic and multi-attribute filter criteria
   - `WeatherReportController` with REST endpoints (`POST /api/v1/reports`, `GET /api/v1/reports`, `GET /api/v1/reports/{id}`)
   - `HealthController` (`GET /api/v1/health`) and Spring Boot Actuator (`GET /actuator/health`)
-  - `GlobalExceptionHandler` with standardized JSON error formatting
-  - CORS configuration enabling frontend origins (`http://localhost:5173`)
-  - Comprehensive integration test suite passing with 100% success rate
-- **Next Phase:** Phase 2 — Frontend GIS Dashboard & Visualization Implementation.
+  - `DatabaseSeeder` component for automatic initial PostgreSQL demo data initialization
+  - React GIS Dashboard connected to live REST API with Leaflet spatial maps, incident feed, KPI metrics, and analytics
+  - **[PHASE 1 KAFKA FOUNDATION COMPLETE]** Spring Kafka integration with `WeatherEventDto`, `KafkaConfig`, `weather-events` topic (3 partitions), `WeatherEventProducer`, `WeatherEventConsumer`, and ingestion API (`POST /api/v1/ingestion/weather`).
+- **Next Phase:** Phase 2 — Apache HBase Wide-Column NoSQL Storage Integration for Raw Telemetry Archives.
