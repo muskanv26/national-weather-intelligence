@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, DownloadCloud } from 'lucide-react';
 
 export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive }) => {
   return (
@@ -16,7 +16,6 @@ export const Header = ({ lastUpdated, onRefresh, isUsingMock, isLive }) => {
       </div>
 
       <div className="header-controls">
-
 
         {/* Last Updated Timestamp */}
         <div className="timestamp-badge">

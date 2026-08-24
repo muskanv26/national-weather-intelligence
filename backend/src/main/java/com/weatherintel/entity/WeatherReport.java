@@ -49,6 +49,12 @@ public class WeatherReport {
     @Column(nullable = false)
     private SourceType source;
 
+    @Column(length = 1000)
+    private String imageUrl;
+    
+    @Column(unique = true)
+    private String externalId;
+
     @Column(nullable = false)
     private LocalDateTime reportedAt;
 

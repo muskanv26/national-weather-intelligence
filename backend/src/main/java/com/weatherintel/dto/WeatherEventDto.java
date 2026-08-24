@@ -23,6 +23,12 @@ public class WeatherEventDto {
 
     private UUID id;
 
+    private String title;
+    private String description;
+    private String author;
+    private String imageUrl;
+    private String externalId;
+
     @NotNull(message = "Latitude is required")
     @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
     @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")

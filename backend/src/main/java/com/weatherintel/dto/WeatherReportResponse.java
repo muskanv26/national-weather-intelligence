@@ -19,6 +19,9 @@ public class WeatherReportResponse {
     private UUID id;
     private String title;
     private String description;
+    private String author;
+    private String imageUrl;
+    private String externalId;
     private EventType eventType;
     private Severity severity;
     private String city;
@@ -34,6 +37,8 @@ public class WeatherReportResponse {
                 .id(entity.getId())
                 .title(entity.getTitle())
                 .description(entity.getDescription())
+                .imageUrl(entity.getImageUrl())
+                .externalId(entity.getExternalId())
                 .eventType(entity.getEventType())
                 .severity(entity.getSeverity())
                 .city(entity.getCity())
