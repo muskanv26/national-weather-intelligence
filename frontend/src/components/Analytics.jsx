@@ -14,13 +14,13 @@ import {
 import { BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 
 const SEVERITY_COLORS = {
-  CRITICAL: '#ef4444',
-  HIGH: '#f97316',
-  MODERATE: '#eab308',
-  LOW: '#06b6d4',
+  CRITICAL: '#D62839',
+  HIGH: '#E8720C',
+  MODERATE: '#C79000',
+  LOW: '#0B5FA5',
 };
 
-const EVENT_COLOR = '#38bdf8';
+const EVENT_COLOR = '#0B5FA5';
 
 export const Analytics = ({ reports = [] }) => {
   // Aggregate data for Event Type chart
@@ -48,7 +48,7 @@ export const Analytics = ({ reports = [] }) => {
     .map((sev) => ({
       name: sev,
       value: severityCounts[sev],
-      color: SEVERITY_COLORS[sev] || '#64748b',
+      color: SEVERITY_COLORS[sev] || '#8592A6',
     }));
 
   const hasData = reports.length > 0;
@@ -77,20 +77,21 @@ export const Analytics = ({ reports = [] }) => {
                 <BarChart data={eventTypeData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                   <XAxis
                     dataKey="name"
-                    stroke="#94a3b8"
+                    stroke="#8592A6"
                     fontSize={11}
                     tickLine={false}
                     interval={0}
                     angle={-25}
                     textAnchor="end"
                   />
-                  <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
+                  <YAxis stroke="#8592A6" fontSize={11} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#DCE2EA',
                       borderRadius: '8px',
-                      color: '#f8fafc',
+                      color: '#10233F',
+                      boxShadow: '0 4px 6px -1px rgba(10, 38, 71, 0.1)',
                     }}
                   />
                   <Bar dataKey="count" fill={EVENT_COLOR} radius={[4, 4, 0, 0]} />
@@ -123,16 +124,17 @@ export const Analytics = ({ reports = [] }) => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#DCE2EA',
                       borderRadius: '8px',
-                      color: '#f8fafc',
+                      color: '#10233F',
+                      boxShadow: '0 4px 6px -1px rgba(10, 38, 71, 0.1)',
                     }}
                   />
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value) => <span style={{ color: '#cbd5e1', fontSize: '12px' }}>{value}</span>}
+                    formatter={(value) => <span style={{ color: '#45536A', fontSize: '12px' }}>{value}</span>}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -143,5 +145,6 @@ export const Analytics = ({ reports = [] }) => {
     </div>
   );
 };
+
 
 export default Analytics;

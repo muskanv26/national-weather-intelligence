@@ -31,4 +31,9 @@ export const getHealth = async () => {
   return response.data;
 };
 
+export const createCitizenReport = async (reportData) => {
+  const response = await apiClient.post('/api/v1/citizen-reports', reportData);
+  return response.data;
+};
+
 export default apiClient;
