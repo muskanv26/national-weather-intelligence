@@ -1,0 +1,6 @@
+twscrape
+kafka-python
+python-dotenv
+fastapi
+uvicorn
+langdetect

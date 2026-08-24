@@ -1,0 +1,6 @@
+apify-client
+kafka-python
+python-dotenv
+fastapi
+uvicorn
+langdetect

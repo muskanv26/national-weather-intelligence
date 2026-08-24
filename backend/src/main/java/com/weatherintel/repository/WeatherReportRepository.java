@@ -13,6 +13,8 @@ import java.util.UUID;
 @Repository
 public interface WeatherReportRepository extends JpaRepository<WeatherReport, UUID>, JpaSpecificationExecutor<WeatherReport> {
 
+    boolean existsByExternalId(String externalId);
+
     List<WeatherReport> findByEventType(EventType eventType);
 
     List<WeatherReport> findByStateIgnoreCase(String state);

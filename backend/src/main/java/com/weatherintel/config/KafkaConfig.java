@@ -15,6 +15,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
@@ -101,10 +102,12 @@ public class KafkaConfig {
         jsonDeserializer.setRemoveTypeHeaders(false);
         jsonDeserializer.setUseTypeMapperForKey(true);
 
+        ErrorHandlingDeserializer<WeatherEventDto> errorHandlingDeserializer = new ErrorHandlingDeserializer<>(jsonDeserializer);
+
         return new DefaultKafkaConsumerFactory<>(
                 configProps,
                 new StringDeserializer(),
-                jsonDeserializer
+                errorHandlingDeserializer
         );
     }
 

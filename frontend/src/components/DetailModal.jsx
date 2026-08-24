@@ -32,6 +32,16 @@ export const DetailModal = ({ report, onClose }) => {
 
           <h3 className="modal-incident-title">{report.title}</h3>
 
+          {report.imageUrl && (
+            <div className="modal-image-container" style={{ margin: '1rem 0', borderRadius: '8px', overflow: 'hidden' }}>
+              <img 
+                src={report.imageUrl} 
+                alt="Incident media" 
+                style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', backgroundColor: '#0f172a' }} 
+              />
+            </div>
+          )}
+
           <div className="modal-section">
             <h4>Incident Description</h4>
             <p className="modal-description">{report.description}</p>
