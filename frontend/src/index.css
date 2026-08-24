@@ -2,29 +2,29 @@
 
 /* CSS RESET & VARIABLES */
 :root {
-  --bg-dark: #090d16;
-  --bg-card: #0f172a;
-  --bg-card-hover: #1e293b;
-  --bg-input: #1e293b;
-  --border-color: #334155;
-  --border-subtle: rgba(255, 255, 255, 0.07);
+  --bg-dark: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-input: #ffffff;
+  --border-color: #e2e8f0;
+  --border-subtle: rgba(0, 0, 0, 0.05);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
   --text-muted: #64748b;
 
-  --color-cyan: #38bdf8;
-  --color-cyan-glow: rgba(56, 189, 248, 0.15);
-  --color-emerald: #10b981;
-  --color-amber: #f59e0b;
-  --color-purple: #a855f7;
+  --color-cyan: #0284c7;
+  --color-cyan-glow: transparent;
+  --color-emerald: #059669;
+  --color-amber: #d97706;
+  --color-purple: #7e22ce;
 
-  --severity-critical: #ef4444;
-  --severity-critical-glow: rgba(239, 68, 68, 0.25);
-  --severity-high: #f97316;
-  --severity-high-glow: rgba(249, 115, 22, 0.25);
-  --severity-moderate: #eab308;
-  --severity-low: #06b6d4;
+  --severity-critical: #dc2626;
+  --severity-critical-glow: transparent;
+  --severity-high: #ea580c;
+  --severity-high-glow: transparent;
+  --severity-moderate: #ca8a04;
+  --severity-low: #0891b2;
 
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -107,9 +107,7 @@ body {
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
 }
 
 .sih-badge {
@@ -162,7 +160,6 @@ body {
   border-radius: 50%;
   background-color: currentColor;
   margin-right: 6px;
-  animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes pulse-ring {
@@ -220,7 +217,7 @@ body {
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .kpi-card-cyan { border-left: 4px solid var(--color-cyan); }
@@ -263,7 +260,7 @@ body {
 .kpi-value {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .kpi-badge {
@@ -351,7 +348,7 @@ body {
 
 .btn-reset:hover {
   background: var(--border-color);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* MAIN SPLIT GRID */
@@ -394,7 +391,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 1.25rem;
-  background: #0b1120;
+  background: var(--bg-card-hover);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -467,7 +464,6 @@ body {
   height: 32px;
   border-radius: 50%;
   border: 2px solid var(--severity-critical);
-  animation: pulse-ring-anim 1.6s ease-out infinite;
   pointer-events: none;
 }
 
@@ -534,7 +530,7 @@ body {
 
 .popup-btn {
   background: var(--color-cyan);
-  color: #0f172a;
+  color: #ffffff;
   border: none;
   font-weight: 700;
   font-size: 0.75rem;
@@ -564,7 +560,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 1.25rem;
-  background: #0b1120;
+  background: var(--bg-card-hover);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -601,7 +597,7 @@ body {
 }
 
 .incident-card {
-  background: #0b1120;
+  background: var(--bg-card-hover);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 0.85rem;
@@ -785,7 +781,7 @@ body {
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  background: #0b1120;
+  background: var(--bg-card-hover);
 }
 
 .modal-title-group {
@@ -809,7 +805,7 @@ body {
 }
 
 .modal-close-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .modal-body {
@@ -861,7 +857,7 @@ body {
 }
 
 .modal-info-box {
-  background: #0b1120;
+  background: var(--bg-card-hover);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 0.85rem;
@@ -890,7 +886,7 @@ body {
 
 .modal-footer {
   padding: 1rem 1.5rem;
-  background: #0b1120;
+  background: var(--bg-card-hover);
   border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
@@ -898,7 +894,7 @@ body {
 
 .btn-modal-close {
   background: var(--color-cyan);
-  color: #0f172a;
+  color: #ffffff;
   border: none;
   font-weight: 700;
   font-size: 0.85rem;
