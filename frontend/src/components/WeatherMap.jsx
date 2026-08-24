@@ -25,28 +25,29 @@ const MapRecenter = ({ center, zoom }) => {
 
 // Create custom vector SVG map pin markers based on severity
 const createSeverityIcon = (severity) => {
-  let color = '#06b6d4'; // LOW (Cyan)
+  let color = '#0B5FA5'; // LOW (Official Blue)
   let badgeClass = 'marker-low';
 
   switch (severity) {
     case 'CRITICAL':
-      color = '#ef4444'; // Red
+      color = '#D62839'; // Red
       badgeClass = 'marker-critical';
       break;
     case 'HIGH':
-      color = '#f97316'; // Orange
+      color = '#E8720C'; // Saffron/Orange
       badgeClass = 'marker-high';
       break;
     case 'MODERATE':
-      color = '#eab308'; // Yellow
+      color = '#C79000'; // Amber/Yellow
       badgeClass = 'marker-moderate';
       break;
     case 'LOW':
     default:
-      color = '#06b6d4'; // Cyan
+      color = '#0B5FA5'; // Official Blue
       badgeClass = 'marker-low';
       break;
   }
+
 
   const svgHtml = `
     <div class="custom-marker-container ${badgeClass}" style="position: relative; width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.6)); pointer-events: auto;">
