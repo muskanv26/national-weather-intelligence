@@ -1,11 +1,14 @@
 package com.weatherintel.service;
 
 import com.weatherintel.dto.CitizenReportCreateRequest;
+import com.weatherintel.dto.CitizenReportEventDto;
 import com.weatherintel.dto.CitizenReportResponse;
 import com.weatherintel.entity.CitizenReport;
 import com.weatherintel.entity.VerificationStatus;
 import com.weatherintel.exception.ResourceNotFoundException;
 import com.weatherintel.repository.CitizenReportRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +20,14 @@ import java.util.UUID;
 @Service
 public class CitizenReportService {
 
-    private final CitizenReportRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(CitizenReportService.class);
 
-    public CitizenReportService(CitizenReportRepository repository) {
+    private final CitizenReportRepository repository;
+    private final CitizenReportEventProducer eventProducer;
+
+    public CitizenReportService(CitizenReportRepository repository, CitizenReportEventProducer eventProducer) {
         this.repository = repository;
+        this.eventProducer = eventProducer;
     }
 
     @Transactional
@@ -40,6 +47,14 @@ public class CitizenReportService {
                 .build();
 
         CitizenReport saved = repository.save(entity);
+
+        try {
+            CitizenReportEventDto eventDto = CitizenReportEventDto.fromEntity(saved);
+            eventProducer.sendCitizenReportEvent(eventDto);
+        } catch (Exception ex) {
+            log.warn("Failed to publish Kafka citizen report event for id={}: {}", saved.getId(), ex.getMessage());
+        }
+
         return CitizenReportResponse.fromEntity(saved);
     }
 

@@ -22,6 +22,9 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.weatherintel.service.CitizenReportEventProducer;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -35,6 +38,9 @@ class CitizenReportIntegrationTest {
 
     @Autowired
     private CitizenReportRepository repository;
+
+    @MockitoBean
+    private CitizenReportEventProducer eventProducer;
 
     @BeforeEach
     void setUp() {
