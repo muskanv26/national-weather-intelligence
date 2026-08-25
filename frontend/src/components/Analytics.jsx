@@ -9,21 +9,31 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
 } from 'recharts';
-import { BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { useTheme } from '../theme/ThemeProvider';
+import Section from './Section';
 
 const SEVERITY_COLORS = {
   CRITICAL: '#D62839',
   HIGH: '#E8720C',
   MODERATE: '#C79000',
-  LOW: '#0B5FA5',
+  LOW: '#2563EB',
 };
 
-const EVENT_COLOR = '#0B5FA5';
+const formatChartLabel = (value) => {
+  const text = String(value).replaceAll('_', ' ').toLowerCase();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 export const Analytics = ({ reports = [] }) => {
-  // Aggregate data for Event Type chart
+  const { theme } = useTheme();
+  const axis = theme === 'dark' ? '#9ca3af' : '#6b7280';
+  const tooltipBg = theme === 'dark' ? '#111111' : '#ffffff';
+  const tooltipBorder = theme === 'dark' ? '#262626' : '#e5e7eb';
+  const tooltipColor = theme === 'dark' ? '#fafafa' : '#0a0a0a';
+  const barFill = theme === 'dark' ? '#fafafa' : '#0a0a0a';
+
   const eventTypeCounts = reports.reduce((acc, curr) => {
     const type = curr.eventType || 'OTHER';
     acc[type] = (acc[type] || 0) + 1;
@@ -31,11 +41,10 @@ export const Analytics = ({ reports = [] }) => {
   }, {});
 
   const eventTypeData = Object.keys(eventTypeCounts).map((key) => ({
-    name: key.replace('_', ' '),
+    name: formatChartLabel(key),
     count: eventTypeCounts[key],
   }));
 
-  // Aggregate data for Severity chart
   const severityCounts = reports.reduce((acc, curr) => {
     const sev = curr.severity || 'LOW';
     acc[sev] = (acc[sev] || 0) + 1;
@@ -46,67 +55,68 @@ export const Analytics = ({ reports = [] }) => {
   const severityData = severityOrder
     .filter((sev) => severityCounts[sev])
     .map((sev) => ({
-      name: sev,
+      name: formatChartLabel(sev),
       value: severityCounts[sev],
-      color: SEVERITY_COLORS[sev] || '#8592A6',
+      color: SEVERITY_COLORS[sev] || '#6b7280',
     }));
 
   const hasData = reports.length > 0;
 
   return (
-    <div className="analytics-section">
-      <div className="section-title-group">
-        <BarChart3 className="text-cyan" size={20} />
-        <h2 className="section-title">Weather Intelligence Analytics</h2>
-      </div>
-
+    <Section title="Analytics" meta={`${reports.length} reports`}>
       {!hasData ? (
-        <div className="analytics-empty-card">
-          <p>No report metrics available to analyze for the selected criteria.</p>
-        </div>
+        <p className="font-mono text-xs text-mute">
+          No report metrics available for the selected criteria
+        </p>
       ) : (
-        <div className="analytics-grid">
-          {/* Chart 1: Reports by Event Type */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <BarChart3 size={16} className="text-cyan" />
-              <h3>Incident Volume by Event Type</h3>
-            </div>
-            <div className="chart-body">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div>
+            <h3 className="mb-4 font-mono text-[11px] text-mute">
+              Volume by Event Type
+            </h3>
+            <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={eventTypeData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <BarChart data={eventTypeData} margin={{ top: 10, right: 8, left: -20, bottom: 28 }}>
                   <XAxis
                     dataKey="name"
-                    stroke="#8592A6"
+                    stroke={axis}
                     fontSize={11}
+                    fontFamily="JetBrains Mono, monospace"
                     tickLine={false}
+                    axisLine={{ stroke: tooltipBorder }}
                     interval={0}
                     angle={-25}
                     textAnchor="end"
                   />
-                  <YAxis stroke="#8592A6" fontSize={11} allowDecimals={false} />
+                  <YAxis
+                    stroke={axis}
+                    fontSize={11}
+                    fontFamily="JetBrains Mono, monospace"
+                    allowDecimals={false}
+                    axisLine={{ stroke: tooltipBorder }}
+                    tickLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      borderColor: '#DCE2EA',
-                      borderRadius: '8px',
-                      color: '#10233F',
-                      boxShadow: '0 4px 6px -1px rgba(10, 38, 71, 0.1)',
+                      backgroundColor: tooltipBg,
+                      borderColor: tooltipBorder,
+                      borderRadius: '2px',
+                      color: tooltipColor,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="count" fill={EVENT_COLOR} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill={barFill} radius={[0, 0, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Chart 2: Reports by Severity */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <PieChartIcon size={16} className="text-amber" />
-              <h3>Severity Distribution</h3>
-            </div>
-            <div className="chart-body">
+          <div>
+            <h3 className="mb-4 font-mono text-[11px] text-mute">
+              Severity Distribution
+            </h3>
+            <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
@@ -115,7 +125,7 @@ export const Analytics = ({ reports = [] }) => {
                     cy="50%"
                     innerRadius={50}
                     outerRadius={80}
-                    paddingAngle={5}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {severityData.map((entry, index) => (
@@ -124,17 +134,22 @@ export const Analytics = ({ reports = [] }) => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      borderColor: '#DCE2EA',
-                      borderRadius: '8px',
-                      color: '#10233F',
-                      boxShadow: '0 4px 6px -1px rgba(10, 38, 71, 0.1)',
+                      backgroundColor: tooltipBg,
+                      borderColor: tooltipBorder,
+                      borderRadius: '2px',
+                      color: tooltipColor,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 12,
                     }}
                   />
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value) => <span style={{ color: '#45536A', fontSize: '12px' }}>{value}</span>}
+                    formatter={(value) => (
+                      <span style={{ color: axis, fontSize: '11px', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {value}
+                      </span>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -142,9 +157,8 @@ export const Analytics = ({ reports = [] }) => {
           </div>
         </div>
       )}
-    </div>
+    </Section>
   );
 };
-
 
 export default Analytics;

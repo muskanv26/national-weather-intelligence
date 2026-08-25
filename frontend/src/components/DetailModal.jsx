@@ -1,93 +1,89 @@
 import React from 'react';
-import { X, MapPin, Clock, Calendar, Database, ShieldAlert } from 'lucide-react';
+import { X } from 'lucide-react';
+import { BracketTag, SeverityTag } from './StatusPill';
 
 export const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-group">
-            <ShieldAlert size={22} className="text-cyan" />
-            <h2>Weather Incident Details</h2>
-          </div>
-          <button onClick={onClose} className="modal-close-btn" title="Close Modal">
-            <X size={18} />
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-ink/40 p-4 dark:bg-black/70"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden border border-hair bg-page"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-hair px-5 py-4">
+          <h2 className="text-sm font-normal text-ink">Incident Details</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-mute hover:text-ink"
+            title="Close modal"
+          >
+            <X size={16} />
           </button>
         </div>
 
-        <div className="modal-body">
-          <div className="modal-badges">
-            <span className={`severity-badge badge-${report.severity?.toLowerCase()}`}>
-              Severity: {report.severity}
-            </span>
-            <span className="event-type-tag">
-              Event: {report.eventType?.replace('_', ' ')}
-            </span>
-            <span className="source-tag">
-              Source: {report.source}
-            </span>
+        <div className="flex flex-col gap-5 overflow-y-auto px-5 py-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <SeverityTag severity={report.severity} />
+            <BracketTag className="text-mute">
+              {(report.eventType || 'OTHER').replaceAll('_', ' ').toLowerCase()}
+            </BracketTag>
+            <BracketTag className="text-mute">
+              {String(report.source || '').toLowerCase()}
+            </BracketTag>
           </div>
 
-          <h3 className="modal-incident-title">{report.title}</h3>
+          <h3 className="text-lg font-normal tracking-tight text-ink">{report.title}</h3>
 
           {report.imageUrl && (
-            <div className="modal-image-container" style={{ margin: '1rem 0', borderRadius: '8px', overflow: 'hidden' }}>
-              <img 
-                src={report.imageUrl} 
-                alt="Incident media" 
-                style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', backgroundColor: '#0f172a' }} 
-              />
-            </div>
+            <img
+              src={report.imageUrl}
+              alt="Incident media"
+              className="max-h-[320px] w-full border border-hair object-contain bg-hover"
+            />
           )}
 
-          <div className="modal-section">
-            <h4>Incident Description</h4>
-            <p className="modal-description">{report.description}</p>
+          <div>
+            <h4 className="mb-1 font-mono text-[11px] text-mute">Description</h4>
+            <p className="text-sm leading-relaxed text-ink">{report.description}</p>
           </div>
 
-          <div className="modal-grid">
-            <div className="modal-info-box">
-              <MapPin size={16} className="text-cyan" />
-              <div>
-                <label>Location & Coordinates</label>
-                <span>{report.city}, {report.state}</span>
-                <span className="sub-text">
-                  Lat: {report.latitude?.toFixed(4)}°, Lng: {report.longitude?.toFixed(4)}°
-                </span>
-              </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <h4 className="mb-1 font-mono text-[11px] text-mute">Location</h4>
+              <p className="text-sm text-ink">
+                {report.city}, {report.state}
+              </p>
+              <p className="font-mono text-[11px] text-mute">
+                Lat {report.latitude?.toFixed(4)} · Lng {report.longitude?.toFixed(4)}
+              </p>
             </div>
-
-            <div className="modal-info-box">
-              <Clock size={16} className="text-amber" />
-              <div>
-                <label>Reported Timestamp</label>
-                <span>{report.reportedAt ? new Date(report.reportedAt).toLocaleString() : 'N/A'}</span>
-              </div>
+            <div>
+              <h4 className="mb-1 font-mono text-[11px] text-mute">Reported</h4>
+              <p className="font-mono text-xs text-ink">
+                {report.reportedAt ? new Date(report.reportedAt).toLocaleString() : 'N/A'}
+              </p>
             </div>
-
-            <div className="modal-info-box">
-              <Calendar size={16} className="text-purple" />
-              <div>
-                <label>System Ingestion Time</label>
-                <span>{report.createdAt ? new Date(report.createdAt).toLocaleString() : 'N/A'}</span>
-              </div>
+            <div>
+              <h4 className="mb-1 font-mono text-[11px] text-mute">Ingested</h4>
+              <p className="font-mono text-xs text-ink">
+                {report.createdAt ? new Date(report.createdAt).toLocaleString() : 'N/A'}
+              </p>
             </div>
-
-            <div className="modal-info-box">
-              <Database size={16} className="text-emerald" />
-              <div>
-                <label>System UUID</label>
-                <span className="font-mono text-xs text-muted">{report.id}</span>
-              </div>
+            <div>
+              <h4 className="mb-1 font-mono text-[11px] text-mute">UUID</h4>
+              <p className="break-all font-mono text-[11px] text-mute">{report.id}</p>
             </div>
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-modal-close">
-            Close Details
+        <div className="flex justify-end border-t border-hair px-5 py-3">
+          <button type="button" onClick={onClose} className="btn-secondary">
+            Close
           </button>
         </div>
       </div>
