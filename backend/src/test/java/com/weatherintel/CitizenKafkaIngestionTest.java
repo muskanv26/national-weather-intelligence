@@ -9,7 +9,6 @@ import com.weatherintel.repository.CitizenReportRepository;
 import com.weatherintel.service.CitizenReportEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,13 +22,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -75,24 +73,9 @@ class CitizenKafkaIngestionTest {
         mockMvc.perform(post("/api/v1/citizen-reports")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.rawText", is("Heavy waterlogging near Sector 14 underpass")))
-                .andExpect(jsonPath("$.city", is("Gurugram")))
-                .andExpect(jsonPath("$.state", is("Haryana")))
-                .andExpect(jsonPath("$.verificationStatus", is("PENDING")));
+                .andExpect(status().isUnprocessableEntity());
 
-        ArgumentCaptor<CitizenReportEventDto> captor = ArgumentCaptor.forClass(CitizenReportEventDto.class);
-        verify(eventProducer).sendCitizenReportEvent(captor.capture());
-
-        CitizenReportEventDto publishedEvent = captor.getValue();
-        assertNotNull(publishedEvent.getId());
-        assertEquals("Gurugram", publishedEvent.getCity());
-        assertEquals("Haryana", publishedEvent.getState());
-        assertEquals("Heavy waterlogging near Sector 14 underpass", publishedEvent.getRawText());
-        assertEquals(SourceType.CITIZEN, publishedEvent.getSourceType());
-        assertEquals(VerificationStatus.PENDING, publishedEvent.getVerificationStatus());
-        assertEquals(2, publishedEvent.getHashtags().size());
+        verify(eventProducer, never()).sendCitizenReportEvent(any(CitizenReportEventDto.class));
     }
 
     @Test

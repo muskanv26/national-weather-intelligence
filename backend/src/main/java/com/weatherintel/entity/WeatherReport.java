@@ -49,9 +49,17 @@ public class WeatherReport {
     @Column(nullable = false)
     private SourceType source;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.VERIFIED;
+
+    @Column
+    private Double aiConfidenceScore;
+
     @Column(length = 1000)
     private String imageUrl;
-    
+
     @Column(unique = true)
     private String externalId;
 
@@ -65,6 +73,9 @@ public class WeatherReport {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
+        }
+        if (this.verificationStatus == null) {
+            this.verificationStatus = VerificationStatus.VERIFIED;
         }
     }
 }

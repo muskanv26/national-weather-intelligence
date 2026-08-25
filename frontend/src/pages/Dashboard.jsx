@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Filter } from 'lucide-react';
 import Header from '../components/Header';
-import KpiCards from '../components/KpiCards';
+import Navbar from '../components/Navbar';
 import FilterBar from '../components/FilterBar';
 import WeatherMap from '../components/WeatherMap';
 import IncidentList from '../components/IncidentList';
@@ -8,7 +9,31 @@ import Analytics from '../components/Analytics';
 import DetailModal from '../components/DetailModal';
 import { getWeatherReports, getHealth, triggerScrape } from '../api';
 import CitizenReportModal from '../components/CitizenReportModal';
+import ErrorToast from '../components/ErrorToast';
+import Section from '../components/Section';
 import { MOCK_REPORTS } from '../data/mockReports';
+
+const matchesSearch = (report, query) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const haystack = [
+    report.title,
+    report.description,
+    report.city,
+    report.state,
+    report.location,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(q);
+};
+
+const hasPlottableCoordinates = (report) => {
+  const lat = Number(report?.latitude);
+  const lng = Number(report?.longitude);
+  return Number.isFinite(lat) && Number.isFinite(lng);
+};
 
 export const Dashboard = () => {
   const [reports, setReports] = useState([]);
@@ -21,6 +46,7 @@ export const Dashboard = () => {
   const [isUsingMock, setIsUsingMock] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
 
   const [filters, setFilters] = useState({
     eventType: '',
@@ -28,8 +54,8 @@ export const Dashboard = () => {
     state: '',
     city: '',
   });
+  const [search, setSearch] = useState('');
 
-  // Isolated Fallback Mechanism to local MOCK_REPORTS
   const useMockData = useCallback((currentFilters) => {
     setIsUsingMock(true);
     let filtered = [...MOCK_REPORTS];
@@ -55,50 +81,46 @@ export const Dashboard = () => {
     setAllReportsForFilters(MOCK_REPORTS);
   }, []);
 
-  // Primary Data Fetch Flow: Spring Boot API -> React State
-  const fetchReportData = useCallback(async (currentFilters = filters) => {
-    setIsLoading(true);
-    setError(null);
+  const fetchReportData = useCallback(
+    async (currentFilters = filters) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      // Check API health status
-      const healthData = await getHealth().catch(() => null);
-      const serverLive = Boolean(healthData && healthData.status === 'UP');
-      setIsLive(serverLive);
+      try {
+        const apiData = await getWeatherReports(currentFilters);
 
-      if (!serverLive) {
-        throw new Error('Spring Boot API is unreachable');
-      }
+        const healthData = await getHealth().catch(() => null);
+        setIsLive(Boolean(healthData && healthData.status === 'UP'));
 
-      // Fetch weather reports from GET http://localhost:8080/api/v1/reports
-      const apiData = await getWeatherReports(currentFilters);
+        if (Array.isArray(apiData)) {
+          const sortedData = apiData.sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
+          setReports(sortedData);
+          setIsUsingMock(false);
 
-      if (Array.isArray(apiData)) {
-        // Sort by reportedAt descending (newest first)
-        const sortedData = apiData.sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
-        setReports(sortedData);
-        setIsUsingMock(false);
-
-        // Store unfiltered dataset for autocompletion state dropdowns
-        const isFilterActive = Boolean(
-          currentFilters.eventType || currentFilters.severity || currentFilters.state || currentFilters.city
-        );
-        if (!isFilterActive) {
-          setAllReportsForFilters(sortedData);
+          const isFilterActive = Boolean(
+            currentFilters.eventType ||
+              currentFilters.severity ||
+              currentFilters.state ||
+              currentFilters.city
+          );
+          if (!isFilterActive) {
+            setAllReportsForFilters(sortedData);
+          }
+        } else {
+          throw new Error('API returned non-array payload');
         }
-      } else {
-        throw new Error('API returned non-array payload');
+      } catch (err) {
+        console.warn('Backend REST API unavailable, switching to local dev fallback dataset:', err.message);
+        setIsLive(false);
+        setError('Live API connection unavailable. Displaying local fallback dataset.');
+        useMockData(currentFilters);
+      } finally {
+        setIsLoading(false);
+        setLastUpdated(new Date().toISOString());
       }
-    } catch (err) {
-      console.warn('Backend REST API unavailable, switching to local dev fallback dataset:', err.message);
-      setIsLive(false);
-      setError('Live API connection unavailable. Displaying local fallback dataset.');
-      useMockData(currentFilters);
-    } finally {
-      setIsLoading(false);
-      setLastUpdated(new Date().toISOString());
-    }
-  }, [filters, useMockData]);
+    },
+    [filters, useMockData]
+  );
 
   useEffect(() => {
     fetchReportData(filters);
@@ -109,71 +131,67 @@ export const Dashboard = () => {
   };
 
   const handleResetFilters = () => {
-    const resetState = { eventType: '', severity: '', state: '', city: '' };
-    setFilters(resetState);
+    setFilters({ eventType: '', severity: '', state: '', city: '' });
+    setSearch('');
   };
 
   const handleRefresh = async () => {
     try {
-      // 1. Force the scraper to run
       await triggerScrape();
-      // 2. Wait for Kafka -> Backend -> DB pipeline
       setTimeout(() => fetchReportData(filters), 3000);
     } catch (err) {
-      console.error("Failed to trigger scrape:", err);
-      // Fallback: still fetch data even if scrape trigger fails
+      console.error('Failed to trigger scrape:', err);
       fetchReportData(filters);
     }
   };
 
-  // Derive unique states for autocompletion
   const availableStates = Array.from(
     new Set(allReportsForFilters.map((r) => r.state).filter(Boolean))
   );
 
+  const visibleReports = useMemo(
+    () => reports.filter((report) => matchesSearch(report, search)),
+    [reports, search]
+  );
+
+  const plottableReports = visibleReports.filter(hasPlottableCoordinates);
+
   return (
-    <div className="dashboard-layout">
-      {/* Header */}
-      <Header
-        lastUpdated={lastUpdated}
-        onRefresh={handleRefresh}
-        isUsingMock={isUsingMock}
-        isLive={isLive}
-        onOpenReportModal={() => setIsReportModalOpen(true)}
-      />
+    <div className="flex min-h-screen flex-col bg-page">
+      <Navbar onRefresh={handleRefresh} />
 
-      <main className="dashboard-main-content">
-        {/* KPI Summary Cards */}
-        <KpiCards reports={reports} />
-
-        {/* Filter Toolbar */}
-        <FilterBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-          availableStates={availableStates}
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-6 pb-16">
+        <Header
+          lastUpdated={lastUpdated}
+          isUsingMock={isUsingMock}
+          isLive={isLive}
+          onOpenReportModal={() => setIsReportModalOpen(true)}
+          reports={visibleReports}
         />
 
-        {/* Error Banner if API error */}
-        {error && (
-          <div className="error-banner">
-            <span>{error}</span>
-          </div>
-        )}
+        <Section title="Filters" icon={<Filter size={14} strokeWidth={1.75} />}>
+          <FilterBar
+            filters={filters}
+            search={search}
+            onSearchChange={setSearch}
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
+            availableStates={availableStates}
+            visibleCount={visibleReports.length}
+            totalCount={allReportsForFilters.length}
+            notice={error}
+          />
+        </Section>
 
-        {/* Main Split Grid: Map on Left, Incident List on Right */}
-        <div className="main-split-grid">
-          <div className="grid-left">
+        <Section title="Operations" meta={`${plottableReports.length} plotted`} className="mt-0">
+          <div className="grid min-h-[540px] grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <WeatherMap
-              reports={reports}
+              reports={plottableReports}
               selectedReport={selectedReport}
               onSelectReport={(report) => setModalReport(report)}
             />
-          </div>
-
-          <div className="grid-right">
             <IncidentList
-              reports={reports}
+              reports={plottableReports}
               selectedReport={selectedReport}
               onSelectReport={(report) => {
                 setSelectedReport(report);
@@ -181,25 +199,46 @@ export const Dashboard = () => {
               isLoading={isLoading}
             />
           </div>
-        </div>
+        </Section>
 
-        {/* Analytics Section */}
-        <Analytics reports={reports} />
+        <Analytics reports={visibleReports} />
+
+        <Section id="about" title="About">
+          <div className="max-w-2xl space-y-3 text-sm leading-relaxed text-mute">
+            <p>
+              An SIH 2026 prototype for problem 26069 — a national weather big data analytics
+              platform. This dashboard plots crowd reports and official/sensor feeds on a live map,
+              with verification status and severity in the incident feed.
+            </p>
+            <p className="font-mono text-xs">
+              Source →{' '}
+              <a
+                href="https://github.com/muskanv26/national-weather-intelligence"
+                target="_blank"
+                rel="noreferrer"
+                className="text-ink underline decoration-hair underline-offset-4 hover:decoration-ink"
+              >
+                github.com/muskanv26/national-weather-intelligence
+              </a>
+            </p>
+          </div>
+        </Section>
       </main>
 
-      {/* Detail Modal */}
       {modalReport && (
-        <DetailModal
-          report={modalReport}
-          onClose={() => setModalReport(null)}
-        />
+        <DetailModal report={modalReport} onClose={() => setModalReport(null)} />
       )}
 
-      {/* Citizen Report Form Modal */}
       <CitizenReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+        onAccepted={() => {
+          fetchReportData(filters);
+        }}
+        onRejected={(reason) => setErrorToast(reason)}
       />
+
+      <ErrorToast message={errorToast} onDismiss={() => setErrorToast(null)} />
     </div>
   );
 };

@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,7 +38,7 @@ export const triggerScrape = async () => {
   } catch (e) {
     console.error("Twscrape trigger failed", e);
   }
-  
+
   try {
     // Trigger apify-scraper (port 8001)
     await axios.post('http://localhost:8001/scrape');
@@ -48,8 +48,8 @@ export const triggerScrape = async () => {
   return { status: "Scrapes triggered" };
 };
 
-export const createCitizenReport = async (data) => {
-  const response = await apiClient.post('/api/v1/citizen-reports', data);
+export const createCitizenReport = async (reportData) => {
+  const response = await apiClient.post('/api/v1/citizen-reports', reportData, { timeout: 25000 });
   return response.data;
 };
 

@@ -1,80 +1,55 @@
 import React from 'react';
-import {
-  CloudRain,
-  Waves,
-  Zap,
-  Sun,
-  CloudFog,
-  Wind,
-  Tornado,
-  AlertTriangle,
-  MapPin,
-  Clock
-} from 'lucide-react';
-
-const getEventIcon = (eventType) => {
-  switch (eventType) {
-    case 'RAIN':
-      return CloudRain;
-    case 'FLOOD':
-      return Waves;
-    case 'THUNDERSTORM':
-      return Zap;
-    case 'HEATWAVE':
-      return Sun;
-    case 'FOG':
-      return CloudFog;
-    case 'DUST_STORM':
-    case 'STRONG_WIND':
-      return Wind;
-    case 'CYCLONE':
-      return Tornado;
-    default:
-      return AlertTriangle;
-  }
-};
+import { SeverityTag, VerificationTag } from './StatusPill';
 
 export const IncidentCard = ({ report, isSelected, onClick }) => {
-  const IconComponent = getEventIcon(report.eventType);
+  const eventType = (report.eventType || 'OTHER')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+  const timeLabel = report.reportedAt
+    ? new Date(report.reportedAt).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
 
   return (
-    <div
+    <tr
       onClick={onClick}
-      className={`incident-card ${isSelected ? 'incident-card-selected' : ''}`}
+      className={`cursor-pointer border-b border-hair text-[13px] transition-colors hover:bg-hover ${
+        isSelected ? 'bg-hover' : ''
+      }`}
     >
-      <div className="incident-card-header">
-        <div className="event-icon-badge">
-          <IconComponent size={18} />
-        </div>
-        <div className="incident-meta-top">
-          <span className="event-name">{report.eventType?.replace('_', ' ')}</span>
-          <span className={`severity-badge badge-${report.severity?.toLowerCase()}`}>
-            {report.severity}
-          </span>
-        </div>
-      </div>
-
-      <h4 className="incident-title">{report.title}</h4>
-
-      {report.imageUrl && (
-        <div className="incident-image-container" style={{marginTop: '0.5rem', marginBottom: '0.5rem', borderRadius: '4px', overflow: 'hidden'}}>
-          <img src={report.imageUrl} alt="Incident media" style={{width: '100%', height: 'auto', display: 'block'}} />
-        </div>
-      )}
-
-      <p className="incident-snippet">{report.description}</p>
-
-      <div className="incident-footer">
-        <div className="footer-item">
-          <MapPin size={12} className="text-cyan" />
-          <span>{report.city}, {report.state}</span>
-        </div>
-        <div className="footer-item">
-          <Clock size={12} className="text-muted" />
-          <span>{report.reportedAt ? new Date(report.reportedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
-        </div>
-      </div>
-    </div>
+      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
+        {eventType}
+      </td>
+      <td className="max-w-[180px] px-3 py-3">
+        <div className="truncate text-ink">{report.title}</div>
+        {(typeof report.aiConfidenceScore === 'number' || report.imageUrl) && (
+          <div className="mt-0.5 font-mono text-[10px] text-mute">
+            {typeof report.aiConfidenceScore === 'number'
+              ? `AI ${Math.round(report.aiConfidenceScore <= 1 ? report.aiConfidenceScore * 100 : report.aiConfidenceScore)}%`
+              : null}
+            {typeof report.aiConfidenceScore === 'number' && report.imageUrl ? ' · ' : null}
+            {report.imageUrl ? 'Media' : null}
+          </div>
+        )}
+      </td>
+      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
+        {report.city}
+      </td>
+      <td className="whitespace-nowrap px-3 py-3">
+        <SeverityTag severity={report.severity} />
+      </td>
+      <td className="whitespace-nowrap px-3 py-3">
+        <VerificationTag report={report} />
+      </td>
+      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
+        {timeLabel}
+      </td>
+    </tr>
   );
 };
 

@@ -60,9 +60,6 @@ public class CitizenReport {
     private Double aiConfidenceScore;
 
     @Column
-    private String aiCategory;
-
-    @Column
     private UUID duplicateOfId;
 
     @Column(nullable = false, updatable = false)
