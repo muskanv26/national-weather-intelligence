@@ -1,7 +1,27 @@
 # National Weather Intelligence
 
-**Smart India Hackathon 2026 — Problem Statement 26069**  
-A backend-focused weather intelligence platform for ingesting, processing, and persisting weather and citizen-reported events through REST APIs and event-driven Kafka pipelines.
+**Smart India Hackathon 2026**  
+
+- **Problem Statement ID:** 26069
+- **Problem Statement Title:** National Weather Big Data Analytics Platform
+- **Organization:** Ministry of Earth Sciences (MoES)
+- **Department:** India Meteorological Department
+- **Category:** Software
+- **Theme:** Disaster Management
+
+**Description:**
+Design and develop a scalable National Weather Big Data Analytics Platform capable of collecting and processing real-time weather-related information for India from multiple internet-based sources including social media platforms, public datasets, websites, APIs, and citizen reports. The platform should automatically collect weather related posts and information tagged with #IMD and other relevant weather hashtags, along with metadata such as date & time, city, state, GPS location, photos, videos, and event category, and store the information in a centralized database.
+
+The system should leverage big data technologies and open-source tools to support large-scale real-time data ingestion, processing, storage, and visualization.
+
+Participants are encouraged to use machine learning and AI-based techniques to identify fake or misleading reports, verify untrusted sources, remove duplicate entries, and automatically categorize weather events such as rainfall, thunderstorms, flooding, heatwaves, fog, dust storms, and strong winds.
+
+Develop a web-based dashboard and Admin Panel for monitoring and analysing collected data with features including:
+- Date-wise filtering
+- Event-wise filtering
+- Location-wise filtering
+- Verification status tracking
+- Real-time visualization and analytics
 
 ## Overview
 
