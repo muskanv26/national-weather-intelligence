@@ -117,7 +117,7 @@ export const WeatherMap = ({ reports = [], selectedReport = null, onSelectReport
   return (
     <div
       id="map"
-      className="flex h-full min-h-[520px] scroll-mt-16 flex-col overflow-hidden border border-hair bg-page"
+      className="flex h-[520px] scroll-mt-16 flex-col overflow-hidden border border-hair bg-page"
     >
       <div className="flex flex-col gap-3 border-b border-hair px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-normal text-ink">Geographic Map — India</h2>

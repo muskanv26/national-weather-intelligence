@@ -98,11 +98,16 @@ def map_tweet_to_event(tweet):
         author = tweet.get("userName", "Unknown")
 
     # Timestamp parsing
-    ts = tweet.get("createdAt") or datetime.now().isoformat()
-    if ts.endswith("Z"):
-        ts = ts.replace("Z", "")
-    
-    ts = re.sub(r'([+-]\d{2}:\d{2})$', '', ts)
+    raw_ts = tweet.get("createdAt")
+    if raw_ts:
+        try:
+            # Apify twitter format: "Tue Aug 25 07:03:58 +0000 2026"
+            dt = datetime.strptime(raw_ts, "%a %b %d %H:%M:%S %z %Y")
+            ts = dt.replace(tzinfo=None).isoformat()
+        except ValueError:
+            ts = datetime.now().isoformat()
+    else:
+        ts = datetime.now().isoformat()
     
     return {
         "externalId": tweet.get("id") or tweet.get("id_str") or str(hash(text)),

@@ -16,40 +16,50 @@ export const IncidentCard = ({ report, isSelected, onClick }) => {
     : '';
 
   return (
-    <tr
+    <div
       onClick={onClick}
-      className={`cursor-pointer border-b border-hair text-[13px] transition-colors hover:bg-hover ${
+      className={`cursor-pointer border-b border-hair p-4 transition-colors hover:bg-hover ${
         isSelected ? 'bg-hover' : ''
       }`}
     >
-      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
-        {eventType}
-      </td>
-      <td className="max-w-[180px] px-3 py-3">
-        <div className="truncate text-ink">{report.title}</div>
-        {(typeof report.aiConfidenceScore === 'number' || report.imageUrl) && (
-          <div className="mt-0.5 font-mono text-[10px] text-mute">
-            {typeof report.aiConfidenceScore === 'number'
-              ? `AI ${Math.round(report.aiConfidenceScore <= 1 ? report.aiConfidenceScore * 100 : report.aiConfidenceScore)}%`
-              : null}
-            {typeof report.aiConfidenceScore === 'number' && report.imageUrl ? ' · ' : null}
-            {report.imageUrl ? 'Media' : null}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[13px] text-ink leading-relaxed">{report.title}</div>
+            {report.description && (
+              <div className="line-clamp-3 text-[12px] leading-relaxed text-mute">
+                {report.description}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+               <SeverityTag severity={report.severity} />
+               <VerificationTag report={report} />
+               <span className="font-mono text-[11px] text-mute uppercase">{eventType}</span>
+               {typeof report.aiConfidenceScore === 'number' && (
+                 <span className="font-mono text-[10px] text-mute">
+                   · AI {Math.round(report.aiConfidenceScore <= 1 ? report.aiConfidenceScore * 100 : report.aiConfidenceScore)}%
+                 </span>
+               )}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1 font-mono text-[11px] text-mute">
+            <span>{report.city}</span>
+            <span>{timeLabel}</span>
+          </div>
+        </div>
+        
+        {report.imageUrl && (
+          <div className="mt-1 overflow-hidden rounded border border-hair">
+            <img
+              src={report.imageUrl}
+              alt="Incident media"
+              className="block max-w-full"
+              loading="lazy"
+            />
           </div>
         )}
-      </td>
-      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
-        {report.city}
-      </td>
-      <td className="whitespace-nowrap px-3 py-3">
-        <SeverityTag severity={report.severity} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-3">
-        <VerificationTag report={report} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-mute">
-        {timeLabel}
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 };
 

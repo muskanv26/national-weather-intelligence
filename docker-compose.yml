@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME must be set in .env}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: national_weather_db
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${DB_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -49,8 +49,8 @@ services:
       - "8080:8080"
     environment:
       - DB_URL=jdbc:postgresql://postgres:5432/national_weather_db
-      - DB_USERNAME=${DB_USERNAME:?DB_USERNAME must be set in .env}
-      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - AI_API_KEY=${AI_API_KEY}
     depends_on:

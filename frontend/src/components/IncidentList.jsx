@@ -12,7 +12,7 @@ export const IncidentList = ({ reports = [], selectedReport, onSelectReport, isL
   return (
     <div
       id="feed"
-      className="flex h-full min-h-[520px] scroll-mt-16 flex-col overflow-hidden border border-hair bg-page"
+      className="flex h-[520px] scroll-mt-16 flex-col overflow-hidden border border-hair bg-page"
     >
       <div className="flex items-center justify-between gap-3 border-b border-hair px-4 py-3">
         <h3 className="inline-flex items-center gap-2 text-sm font-normal text-ink">
@@ -38,28 +38,16 @@ export const IncidentList = ({ reports = [], selectedReport, onSelectReport, isL
             </p>
           </div>
         ) : (
-          <table className="w-full min-w-[520px] border-collapse text-left">
-            <thead className="sticky top-0 bg-page">
-              <tr className="border-b border-hair font-mono text-[10px] uppercase tracking-wide text-mute">
-                <th className="px-3 py-2 font-normal">event</th>
-                <th className="px-3 py-2 font-normal">title</th>
-                <th className="px-3 py-2 font-normal">loc</th>
-                <th className="px-3 py-2 font-normal">sev</th>
-                <th className="px-3 py-2 font-normal">status</th>
-                <th className="px-3 py-2 font-normal">time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedReports.map((report) => (
-                <IncidentCard
-                  key={report.id}
-                  report={report}
-                  isSelected={selectedReport?.id === report.id}
-                  onClick={() => onSelectReport(report)}
-                />
-              ))}
-            </tbody>
-          </table>
+          <div className="flex flex-col">
+            {sortedReports.map((report) => (
+              <IncidentCard
+                key={report.id}
+                report={report}
+                isSelected={selectedReport?.id === report.id}
+                onClick={() => onSelectReport(report)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
