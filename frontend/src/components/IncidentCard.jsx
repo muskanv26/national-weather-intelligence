@@ -18,8 +18,8 @@ export const IncidentCard = ({ report, isSelected, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer border-b border-hair p-4 transition-colors hover:bg-hover ${
-        isSelected ? 'bg-hover' : ''
+      className={`cursor-pointer rounded-xl bg-white/95 backdrop-blur-md shadow-lg border border-hair p-5 ${
+        isSelected ? 'ring-2 ring-primary bg-white' : ''
       }`}
     >
       <div className="flex flex-col gap-3">
@@ -49,11 +49,11 @@ export const IncidentCard = ({ report, isSelected, onClick }) => {
         </div>
         
         {report.imageUrl && (
-          <div className="mt-1 overflow-hidden rounded border border-hair">
+          <div className="-mx-5 -mb-5 mt-3 overflow-hidden rounded-b-xl border-t border-hair">
             <img
               src={report.imageUrl}
               alt="Incident media"
-              className="block max-w-full"
+              className="block w-full object-cover"
               loading="lazy"
             />
           </div>

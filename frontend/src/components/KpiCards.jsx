@@ -49,16 +49,12 @@ const formatShare = (part, whole) => {
   return `${Math.round((part / whole) * 100)}% of total`;
 };
 
-const MetricCard = ({ icon: Icon, label, value, substat, accentClass }) => (
-  <article className="rounded-md border border-hair bg-raised px-4 py-3.5">
-    <div className="flex items-center gap-2">
-      <Icon size={14} strokeWidth={1.75} className={accentClass} aria-hidden="true" />
-      <span className="font-mono text-[11px] text-mute">{label}</span>
-    </div>
-    <p className="mt-2 font-mono text-[1.75rem] leading-none tracking-tight text-ink tabular-nums sm:text-3xl">
+const MetricCard = ({ label, value, accentClass }) => (
+  <article className="pointer-events-auto rounded-xl border border-hair bg-white/95 backdrop-blur-md px-4 py-3 shadow-xl flex items-center gap-4 whitespace-nowrap">
+    <span className={`font-mono text-xs font-semibold ${accentClass}`}>{label}</span>
+    <span className="font-mono text-2xl leading-none tracking-tight text-ink tabular-nums">
       {value}
-    </p>
-    <p className={`mt-2 font-mono text-[11px] ${accentClass}`}>{substat}</p>
+    </span>
   </article>
 );
 
@@ -81,7 +77,7 @@ export const KpiCards = ({ reports = [] }) => {
     {
       key: 'active',
       icon: FileText,
-      label: 'Active Reports',
+      label: 'Active',
       value: totalReports,
       substat: dayOverDaySubstat(reports),
       accentClass: 'text-[#2563EB]',
@@ -89,7 +85,7 @@ export const KpiCards = ({ reports = [] }) => {
     {
       key: 'verified',
       icon: Check,
-      label: 'Verified Reports',
+      label: 'Verified',
       value: verifiedCount,
       substat: `${formatRate(verifiedCount, totalReports)} verification rate`,
       accentClass: 'text-[#16a34a]',
@@ -97,30 +93,20 @@ export const KpiCards = ({ reports = [] }) => {
     {
       key: 'critical',
       icon: AlertTriangle,
-      label: 'Critical Incidents',
+      label: 'Critical',
       value: criticalCount,
       substat: criticalSubstat,
       accentClass: 'text-[#D62839]',
     },
-    {
-      key: 'states',
-      icon: Globe,
-      label: 'States Monitored',
-      value: uniqueStatesCount,
-      substat: 'All-India coverage',
-      accentClass: 'text-[#7C3AED]',
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="flex flex-row gap-4 flex-nowrap">
       {cards.map((card) => (
         <MetricCard
           key={card.key}
-          icon={card.icon}
           label={card.label}
           value={card.value}
-          substat={card.substat}
           accentClass={card.accentClass}
         />
       ))}

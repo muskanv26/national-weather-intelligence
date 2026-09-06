@@ -1,17 +1,31 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter } from 'lucide-react';
+import { Info, Plus, Search, MapPin, Building, ChevronRight, ChevronLeft, CloudLightning, AlertTriangle } from 'lucide-react';
 import Header from '../components/Header';
-import Navbar from '../components/Navbar';
-import FilterBar from '../components/FilterBar';
-import WeatherMap from '../components/WeatherMap';
+import ISO_STATES from '../data/iso_states.json';
+import CITIES_BY_STATE from '../data/cities_by_state.json';
+
+import { FilterBar } from '../components/FilterBar';
+import KpiCards from '../components/KpiCards';
+import { WeatherMap } from '../components/WeatherMap';
 import IncidentList from '../components/IncidentList';
-import Analytics from '../components/Analytics';
+import InfoModal from '../components/InfoModal';
 import DetailModal from '../components/DetailModal';
 import { getWeatherReports, getHealth, triggerScrape } from '../api';
 import CitizenReportModal from '../components/CitizenReportModal';
 import ErrorToast from '../components/ErrorToast';
-import Section from '../components/Section';
 import { MOCK_REPORTS } from '../data/mockReports';
+
+const EVENT_TYPES = [
+  'RAIN', 'FLOOD', 'THUNDERSTORM', 'HEATWAVE', 'FOG', 
+  'DUST_STORM', 'STRONG_WIND', 'CYCLONE', 'OTHER'
+];
+
+const SEVERITIES = ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'];
+
+const formatLabel = (value) => {
+  const text = value.replaceAll('_', ' ').toLowerCase();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 const matchesSearch = (report, query) => {
   const q = query.trim().toLowerCase();
@@ -41,6 +55,8 @@ export const Dashboard = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [modalReport, setModalReport] = useState(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUsingMock, setIsUsingMock] = useState(false);
@@ -127,7 +143,13 @@ export const Dashboard = () => {
   }, [filters, fetchReportData]);
 
   const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      const newFilters = { ...prev, [key]: value };
+      if (key === 'state') {
+        newFilters.city = '';
+      }
+      return newFilters;
+    });
   };
 
   const handleResetFilters = () => {
@@ -157,73 +179,165 @@ export const Dashboard = () => {
   const plottableReports = visibleReports.filter(hasPlottableCoordinates);
 
   return (
-    <div className="flex min-h-screen flex-col bg-page">
-      <Navbar onRefresh={handleRefresh} />
-
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-6 pb-16">
-        <Header
-          lastUpdated={lastUpdated}
-          isUsingMock={isUsingMock}
-          isLive={isLive}
-          onOpenReportModal={() => setIsReportModalOpen(true)}
-          reports={visibleReports}
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-page">
+      <div className="fixed inset-0 z-0">
+        <WeatherMap
+          reports={plottableReports}
+          selectedReport={selectedReport}
+          onSelectReport={(report) => setModalReport(report)}
+          selectedState={filters.state}
+          onSelectState={(stateName) => handleFilterChange('state', stateName)}
+          selectedCity={filters.city}
+          onSelectCity={(cityName) => handleFilterChange('city', cityName)}
         />
+      </div>
+      
+      <div className="absolute bottom-6 left-6 z-50 pointer-events-none">
+        <KpiCards reports={visibleReports} />
+      </div>
 
-        <Section title="Filters" icon={<Filter size={14} strokeWidth={1.75} />}>
-          <FilterBar
-            filters={filters}
-            search={search}
-            onSearchChange={setSearch}
-            onFilterChange={handleFilterChange}
-            onReset={handleResetFilters}
-            availableStates={availableStates}
-            visibleCount={visibleReports.length}
-            totalCount={allReportsForFilters.length}
-            notice={error}
-          />
-        </Section>
-
-        <Section title="Operations" meta={`${plottableReports.length} plotted`} className="mt-0">
-          <div className="grid min-h-[540px] grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-            <WeatherMap
-              reports={plottableReports}
-              selectedReport={selectedReport}
-              onSelectReport={(report) => setModalReport(report)}
-            />
-            <IncidentList
-              reports={plottableReports}
-              selectedReport={selectedReport}
-              onSelectReport={(report) => {
-                setSelectedReport(report);
-              }}
-              isLoading={isLoading}
-            />
+      <header className="absolute top-6 left-6 right-6 z-50 pointer-events-none flex items-start gap-4 flex-nowrap overflow-x-auto overflow-y-visible hide-scrollbar">
+        {/* Title & Actions */}
+        <div className="pointer-events-auto flex flex-col gap-3 shrink-0 hidden xl:flex">
+          <div className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-[15px] font-semibold text-ink shadow-lg border border-hair whitespace-nowrap">
+            India Weather Intelligence
           </div>
-        </Section>
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="flex h-11 items-center justify-center gap-2 rounded-full bg-white hover:bg-gray-50 transition-colors px-6 text-[15px] font-semibold text-ink shadow-lg border border-hair"
+            title="Report a weather incident or disaster in your area"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            Report Incident
+          </button>
+        </div>
 
-        <Analytics reports={visibleReports} />
+        {/* Search + Filters Group */}
+        <div className="pointer-events-auto flex flex-nowrap items-center gap-3 shrink-0">
+          <label className="flex h-11 items-center gap-3 rounded-full bg-white px-5 shadow-lg border border-hair w-80 shrink-0">
+            <Search size={18} className="shrink-0 text-mute" />
+            <input
+              id="global-search"
+              type="search"
+              placeholder="Search reports by title, location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border-0 bg-transparent text-[15px] text-ink outline-none placeholder:text-mute"
+            />
+          </label>
 
-        <Section id="about" title="About">
-          <div className="max-w-2xl space-y-3 text-sm leading-relaxed text-mute">
-            <p>
-              An SIH 2026 prototype for problem 26069 — a national weather big data analytics
-              platform. This dashboard plots crowd reports and official/sensor feeds on a live map,
-              with verification status and severity in the incident feed.
-            </p>
-            <p className="font-mono text-xs">
-              Source →{' '}
-              <a
-                href="https://github.com/muskanv26/national-weather-intelligence"
-                target="_blank"
-                rel="noreferrer"
-                className="text-ink underline decoration-hair underline-offset-4 hover:decoration-ink"
+          <label className="flex h-11 items-center gap-2 rounded-full bg-white px-4 shadow-lg border border-hair relative shrink-0">
+            <CloudLightning size={16} className="text-mute shrink-0" />
+            <select
+              id="eventType-select-dash"
+              value={filters.eventType || ''}
+              onChange={(e) => handleFilterChange('eventType', e.target.value)}
+              className="w-24 border-0 bg-transparent text-[14px] text-ink outline-none cursor-pointer"
+            >
+              <option value="">All Events</option>
+              {EVENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {formatLabel(type)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex h-11 items-center gap-2 rounded-full bg-white px-4 shadow-lg border border-hair relative shrink-0">
+            <AlertTriangle size={16} className="text-mute shrink-0" />
+            <select
+              id="severity-select-dash"
+              value={filters.severity || ''}
+              onChange={(e) => handleFilterChange('severity', e.target.value)}
+              className="w-28 border-0 bg-transparent text-[14px] text-ink outline-none cursor-pointer"
+            >
+              <option value="">All Severities</option>
+              {SEVERITIES.map((sev) => (
+                <option key={sev} value={sev}>
+                  {formatLabel(sev)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex h-11 items-center gap-2 rounded-full bg-white px-4 shadow-lg border border-hair relative w-44 shrink-0">
+            <MapPin size={16} className="text-mute shrink-0" />
+            <select
+              value={filters.state || ''}
+              onChange={(e) => handleFilterChange('state', e.target.value)}
+              className="w-full border-0 bg-transparent text-[14px] text-ink outline-none cursor-pointer"
+            >
+              <option value="">All States</option>
+              {ISO_STATES.map((s) => (
+                <option key={s.code} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div 
+            className={`transition-all duration-500 ease-in-out overflow-hidden flex items-center shrink-0 ${
+              ISO_STATES.some(s => s.name === filters.state) ? 'max-w-[200px] opacity-100 translate-x-0' : 'max-w-0 opacity-0 translate-x-4 pointer-events-none'
+            }`}
+          >
+            <label className="flex h-11 items-center gap-2 rounded-full bg-white px-4 shadow-lg border border-hair relative w-44">
+              <Building size={16} className="text-mute shrink-0" />
+              <select
+                value={filters.city || ''}
+                onChange={(e) => handleFilterChange('city', e.target.value)}
+                className="w-full border-0 bg-transparent text-[14px] text-ink outline-none cursor-pointer"
               >
-                github.com/muskanv26/national-weather-intelligence
-              </a>
-            </p>
+                <option value="">All Cities</option>
+                {(CITIES_BY_STATE[filters.state] || []).map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        </Section>
-      </main>
+        </div>
+
+        <div className="flex-1 min-w-[1rem]"></div>
+      </header>
+
+      <div 
+        className={`absolute bottom-0 right-6 top-0 z-10 flex transition-transform duration-500 ease-in-out pointer-events-none ${
+          isSidebarOpen ? 'translate-x-0' : 'translate-x-[440px]'
+        }`}
+      >
+        <button 
+          type="button"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="absolute -left-12 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 backdrop-blur-md border border-hair shadow-lg hover:bg-gray-50 pointer-events-auto text-ink transition-transform hover:scale-105"
+          title="Toggle Analytics Sidebar"
+        >
+          {isSidebarOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button>
+
+        <main className="pointer-events-auto flex w-[420px] flex-col h-full overflow-hidden">
+          <div className="flex h-full flex-col">
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+              <IncidentList
+                reports={plottableReports}
+                selectedReport={selectedReport}
+                onSelectReport={(report) => {
+                  setSelectedReport(report);
+                }}
+                isLoading={isLoading}
+              />
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <InfoModal 
+        isOpen={isInfoModalOpen} 
+        onClose={() => setIsInfoModalOpen(false)} 
+        reports={visibleReports} 
+      />
 
       {modalReport && (
         <DetailModal report={modalReport} onClose={() => setModalReport(null)} />

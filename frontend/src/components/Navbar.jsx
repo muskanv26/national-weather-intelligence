@@ -24,7 +24,7 @@ const linkClass = (active) =>
       : 'text-mute hover:text-ink hover:underline hover:decoration-hair hover:underline-offset-[6px]'
   }`;
 
-export const Navbar = ({ onRefresh }) => {
+export const Navbar = ({ onRefresh, className }) => {
   const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState('overview');
@@ -87,8 +87,8 @@ export const Navbar = ({ onRefresh }) => {
   );
 
   return (
-    <nav className="sticky top-0 z-[2000] bg-page/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 px-6">
+    <nav className={className || "sticky top-0 z-[2000] bg-page/95 backdrop-blur-sm"}>
+      <div className="mx-auto flex h-14 w-full items-center justify-between gap-4 px-6">
         <a href="#overview" className="flex min-w-0 items-center gap-2.5 text-ink" onClick={closeMenu}>
           <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink">
             <ShieldAlert size={14} />

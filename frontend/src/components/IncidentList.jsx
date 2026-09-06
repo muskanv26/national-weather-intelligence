@@ -12,33 +12,27 @@ export const IncidentList = ({ reports = [], selectedReport, onSelectReport, isL
   return (
     <div
       id="feed"
-      className="flex h-[520px] scroll-mt-16 flex-col overflow-hidden border border-hair bg-page"
+      className="flex h-full flex-col overflow-hidden"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-hair px-4 py-3">
-        <h3 className="inline-flex items-center gap-2 text-sm font-normal text-ink">
-          <Activity size={14} strokeWidth={1.75} className="text-mute" />
-          Incident Feed
-        </h3>
-        <span className="font-mono text-[11px] text-mute">
-          N: {sortedReports.length}
-        </span>
-      </div>
-
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto hide-scrollbar">
         {isLoading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-16 font-mono text-xs text-mute">
-            <div className="h-5 w-5 animate-spin rounded-full border border-hair border-t-ink" />
-            Fetching feed…
+          <div className="px-2 py-6">
+            <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 font-mono text-[12px] text-mute bg-white/95 backdrop-blur-md rounded-xl border border-hair shadow-lg">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-hair border-t-ink" />
+              Fetching feed…
+            </div>
           </div>
         ) : sortedReports.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-4 py-16 text-center">
-            <p className="text-sm text-ink">No incident reports</p>
-            <p className="mt-1 font-mono text-xs text-mute">
-              No weather alerts match the current filters
-            </p>
+          <div className="px-2 py-6">
+            <div className="flex flex-col items-center justify-center px-4 py-8 text-center bg-white/95 backdrop-blur-md rounded-xl border border-hair shadow-lg">
+              <p className="text-[13px] font-medium text-ink">No incident reports</p>
+              <p className="mt-1 font-mono text-[11px] text-mute">
+                No weather alerts match the current filters
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-4 px-2 py-6">
             {sortedReports.map((report) => (
               <IncidentCard
                 key={report.id}

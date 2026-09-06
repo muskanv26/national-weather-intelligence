@@ -8,20 +8,18 @@ const ThemeContext = createContext({
 });
 
 const readStoredTheme = () => {
-  if (typeof window === 'undefined') return 'light';
-  return window.localStorage.getItem(STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+  return 'light'; // Forced light theme
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(readStoredTheme);
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    window.localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const toggleTheme = () => {
-    setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
+    // Disabled toggle
   };
 
   return (
